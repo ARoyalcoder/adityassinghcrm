@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { X, DollarSign, Calculator } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -19,27 +19,32 @@ export function EditProfitabilityModal({
   projectId,
   profitability,
 }: EditProfitabilityModalProps) {
+  return (
+    <EditProfitabilityModalForm
+      key={JSON.stringify(profitability)}
+      open={open}
+      onOpenChange={onOpenChange}
+      projectId={projectId}
+      profitability={profitability}
+    />
+  )
+}
+
+function EditProfitabilityModalForm({
+  open,
+  onOpenChange,
+  projectId,
+  profitability,
+}: EditProfitabilityModalProps) {
   const queryClient = useQueryClient()
 
-  const [revenue, setRevenue] = useState('')
-  const [materialCost, setMaterialCost] = useState('')
-  const [labourCost, setLabourCost] = useState('')
-  const [vendorCost, setVendorCost] = useState('')
-  const [travelCost, setTravelCost] = useState('')
-  const [otherExpenses, setOtherExpenses] = useState('')
-  const [expectedCost, setExpectedCost] = useState('')
-
-  useEffect(() => {
-    if (profitability) {
-      setRevenue(profitability.revenue?.toString() ?? '0')
-      setMaterialCost(profitability.materialCost?.toString() ?? '0')
-      setLabourCost(profitability.labourCost?.toString() ?? '0')
-      setVendorCost(profitability.vendorCost?.toString() ?? '0')
-      setTravelCost(profitability.travelCost?.toString() ?? '0')
-      setOtherExpenses(profitability.otherExpenses?.toString() ?? '0')
-      setExpectedCost(profitability.expectedCost?.toString() ?? '0')
-    }
-  }, [profitability])
+  const [revenue, setRevenue] = useState(profitability?.revenue.toString() ?? '')
+  const [materialCost, setMaterialCost] = useState(profitability?.materialCost.toString() ?? '')
+  const [labourCost, setLabourCost] = useState(profitability?.labourCost.toString() ?? '')
+  const [vendorCost, setVendorCost] = useState(profitability?.vendorCost.toString() ?? '')
+  const [travelCost, setTravelCost] = useState(profitability?.travelCost.toString() ?? '')
+  const [otherExpenses, setOtherExpenses] = useState(profitability?.otherExpenses.toString() ?? '')
+  const [expectedCost, setExpectedCost] = useState(profitability?.expectedCost.toString() ?? '')
 
   const mutation = useMutation({
     mutationFn: (data: Parameters<typeof projectsApi.updateProfitability>[1]) =>

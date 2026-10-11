@@ -42,7 +42,8 @@ export function CreateProjectModal({
   const [notes, setNotes] = useState('')
 
   const createMutation = useMutation({
-    mutationFn: (data: any) => projectsApi.createProject(data),
+    mutationFn: (data: Parameters<typeof projectsApi.createProject>[0]) =>
+      projectsApi.createProject(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] })
       onOpenChange(false)

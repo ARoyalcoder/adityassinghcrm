@@ -23,7 +23,8 @@ export function ProjectDeliverablesTab({ projectId, deliverables, milestones }: 
   const [fileUrl, setFileUrl] = useState('')
 
   const addMutation = useMutation({
-    mutationFn: (data: any) => projectsApi.addDeliverable(projectId, data),
+    mutationFn: (data: Parameters<typeof projectsApi.addDeliverable>[1]) =>
+      projectsApi.addDeliverable(projectId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects', projectId] })
       setIsAddOpen(false)

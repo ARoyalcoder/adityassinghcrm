@@ -10,14 +10,14 @@ import {
   HelpCircle,
 } from 'lucide-react'
 
-export interface NavItem {
+interface NavItem {
   id: string
   label: string
   icon: React.ComponentType<{ className?: string }>
   badge?: string
 }
 
-export const NAV_ITEMS: NavItem[] = [
+const NAV_ITEMS: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'accounts', label: 'Accounts', icon: Wallet },
   { id: 'transactions', label: 'Transactions', icon: ArrowLeftRight },

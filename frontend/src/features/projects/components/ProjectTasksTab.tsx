@@ -32,7 +32,8 @@ export function ProjectTasksTab({ projectId, tasks, milestones, members }: Proje
   const [selectedDependencies, setSelectedDependencies] = useState<string[]>([])
 
   const addMutation = useMutation({
-    mutationFn: (data: any) => projectsApi.addTask(projectId, data),
+    mutationFn: (data: Parameters<typeof projectsApi.addTask>[1]) =>
+      projectsApi.addTask(projectId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects', projectId] })
       setIsAddOpen(false)

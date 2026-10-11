@@ -24,7 +24,8 @@ export function ProjectStatusSettingsModal({ open, onOpenChange }: ProjectStatus
   const [isCancelled, setIsCancelled] = useState(false)
 
   const createMutation = useMutation({
-    mutationFn: (data: any) => projectsApi.createStatusConfig(data),
+    mutationFn: (data: Parameters<typeof projectsApi.createStatusConfig>[0]) =>
+      projectsApi.createStatusConfig(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects', 'statuses'] })
       queryClient.invalidateQueries({ queryKey: ['projects', 'kanban'] })

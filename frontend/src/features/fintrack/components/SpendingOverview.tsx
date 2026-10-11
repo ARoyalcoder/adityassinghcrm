@@ -39,7 +39,7 @@ export function SpendingOverview({ totalDisplay, categories }: SpendingOverviewP
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Tooltip
-                formatter={(value: any, name: any) => [`₹${Number(value).toLocaleString('en-IN')}`, name]}
+                formatter={(value, name) => [`₹${Number(value).toLocaleString('en-IN')}`, name]}
                 contentStyle={{
                   backgroundColor: '#ffffff',
                   borderRadius: '10px',

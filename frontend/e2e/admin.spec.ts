@@ -300,7 +300,7 @@ test('branches can be filtered by state and city, and a new branch needs a locat
 
   await page.getByLabel('State').selectOption('Uttar Pradesh')
   await expect.poll(() => requests.at(-1)?.get('state')).toBe('Uttar Pradesh')
-  jawait expect(page.getByLabel('City').locator('option')).toHaveText(['All cities', 'Kanpur', 'Lucknow'])
+  await expect(page.getByLabel('City').locator('option')).toHaveText(['All cities', 'Kanpur', 'Lucknow'])
   await page.getByLabel('City').selectOption('Kanpur')
   await expect.poll(() => requests.at(-1)?.get('city')).toBe('Kanpur')
 
