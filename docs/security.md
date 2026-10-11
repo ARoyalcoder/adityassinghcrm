@@ -120,22 +120,24 @@ public CustomerResponse get(@PathVariable UUID id) { ... }
 ### Default role matrix
 
 Seeded by `V6__seed_roles_and_permissions.sql` (`AUDIT_VIEW` by `V8`; `CUSTOMER_EXPORT` by `V9`, also held by
-Super Admin, Admin and Director). **This is a starting proposal; review it before go-live.**
+Super Admin, Admin and Director; the `LEAD_*` permissions by `V12`, see [leads.md](leads.md); `PROJECT_CONFIGURE`, held by Super Admin and
+Admin, by `V19`, see [project-templates.md](project-templates.md); the `FIELD_JOB_*` permissions by `V22`, see
+[field-operations.md](field-operations.md)). **This is a starting proposal; review it before go-live.**
 Customer, project and finance permissions exist ahead of their modules so roles can be set up now.
 
 | Role | Permissions |
 | --- | --- |
 | `SUPER_ADMIN` | All |
-| `ADMIN` | All of user, organization, branch, catalog, customer, project; `ROLE_VIEW`; `FINANCE_VIEW`; `AUDIT_VIEW`. Not `ROLE_UPDATE`, not `FINANCE_APPROVE` |
-| `DIRECTOR` | View everything, including `AUDIT_VIEW`; `PROJECT_UPDATE`; `FINANCE_APPROVE` |
-| `SALES_MANAGER` | Customer view/create/update/delete/export; `PROJECT_VIEW`; `CATALOG_VIEW` |
-| `SALES_EXECUTIVE` | Customer view/create/update; `CATALOG_VIEW` |
-| `PROJECT_MANAGER` | `PROJECT_VIEW`, `PROJECT_UPDATE`; `CUSTOMER_VIEW`; `CATALOG_VIEW` |
+| `ADMIN` | All of user, organization, branch, catalog, customer, lead, project; `ROLE_VIEW`; `FINANCE_VIEW`; `AUDIT_VIEW`; `FIELD_JOB_VIEW`, `FIELD_JOB_MANAGE`. Not `ROLE_UPDATE`, not `FINANCE_APPROVE`, not `FIELD_JOB_WORK` |
+| `DIRECTOR` | View everything, including `LEAD_VIEW`, `FIELD_JOB_VIEW` and `AUDIT_VIEW`; `PROJECT_UPDATE`; `FINANCE_APPROVE` |
+| `SALES_MANAGER` | Customer view/create/update/delete/export; lead view/create/update/delete and `LEAD_CONFIGURE`; `PROJECT_VIEW`; `CATALOG_VIEW` |
+| `SALES_EXECUTIVE` | Customer view/create/update; lead view/create/update; `CATALOG_VIEW` |
+| `PROJECT_MANAGER` | `PROJECT_VIEW`, `PROJECT_UPDATE`; `CUSTOMER_VIEW`; `CATALOG_VIEW`; `FIELD_JOB_VIEW`, `FIELD_JOB_MANAGE` |
 | `DESIGNER` | `PROJECT_VIEW`; `CATALOG_VIEW` |
-| `TECHNICIAN` | `PROJECT_VIEW` |
+| `TECHNICIAN` | `PROJECT_VIEW`; `FIELD_JOB_WORK` (their own field jobs, see [field-operations.md](field-operations.md)) |
 | `FINANCE` | `FINANCE_VIEW`, `FINANCE_APPROVE`; `CUSTOMER_VIEW`; `PROJECT_VIEW` |
 | `HR` | User view/create/update; `ORGANIZATION_VIEW`; `BRANCH_VIEW` |
-| `SUPPORT_AGENT` | `CUSTOMER_VIEW`; `PROJECT_VIEW` |
+| `SUPPORT_AGENT` | `CUSTOMER_VIEW`; `PROJECT_VIEW`; `FIELD_JOB_VIEW` |
 | `VENDOR`, `PARTNER` | None yet |
 
 ## First administrator

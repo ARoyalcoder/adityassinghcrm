@@ -40,13 +40,20 @@ platform/            Shared kernel. Knows nothing about any business module.
   persistence/         Entity base classes (BaseEntity, AuditableEntity, SoftDeletableEntity), JPA auditing
   security/            Security filter chain, JWT signing/verification, CurrentUser, CORS
   storage/             ObjectStorage port + S3 implementation
+  timeline/            TimelineEvent, categories and event types; merging and cursor paging of events from many sources
   web/                 Error response, exception handler, PageResponse, Paging, ApiPaths
 
 system/              Public build/version info
 identity/            Organizations, branches, users, roles, permissions; sign-in, sessions, passwords
 catalog/             Service verticals, categories and services (what the company sells); see configuration.md
+                     Configurable per-service lead fields and their stored answers; see custom-fields.md
 audit/               Audit log and record activity, written automatically for @Audited entities; see audit.md
-customer/            Customers with contacts, addresses, tags and notes; duplicate detection; see customers.md
+project/             Projects, and the project template of each service (stages, schedule, planning a project
+                     from it); see project-templates.md
+fieldops/            Field jobs and site visits: scheduling, the technician workflow, sign-off; see field-operations.md
+lead/                Leads, their activity log, qualification questions and the scoring engine; see leads.md
+customer/            Customers with contacts, addresses, tags, notes and interactions; duplicate detection;
+                     the Customer 360 (timeline, health, summary); see customers.md
 <module>/            Every business module follows the same shape:
   api/                 What OTHER modules may use: enums, ids, service interfaces, event records
   internal/            Entities, repositories, services. Invisible to other modules

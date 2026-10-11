@@ -121,6 +121,9 @@ regardless.
 Every change made on these screens is audited automatically, and the service, category and branch
 edit pages show the record's history (see [audit.md](audit.md)).
 
+Each service also has a **Lead fields** screen (`/admin/services/:id/fields`) where the questions asked
+on a lead for that service are defined; see [custom-fields.md](custom-fields.md).
+
 Not on a screen yet: editing the organization's details, and deleting branches, categories or
 services (the API supports all of these).
 

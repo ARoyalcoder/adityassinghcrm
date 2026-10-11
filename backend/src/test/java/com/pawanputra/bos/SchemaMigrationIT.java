@@ -29,7 +29,8 @@ class SchemaMigrationIT extends AbstractIntegrationTest {
                         + "ORDER BY installed_rank",
                 String.class);
 
-        assertThat(versions).containsExactly("1", "2", "3", "4", "5", "6", "7", "8", "9");
+        assertThat(versions).containsExactly("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12",
+                "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23");
     }
 
     @Test
@@ -46,7 +47,21 @@ class SchemaMigrationIT extends AbstractIntegrationTest {
                 "user_sessions", "refresh_tokens", "password_reset_tokens",
                 "audit_logs", "entity_activity_logs",
                 "customers", "customer_contacts", "customer_addresses", "customer_tags",
-                "customer_tag_assignments", "customer_notes",
+                "customer_tag_assignments", "customer_notes", "customer_interactions",
+                "service_custom_fields", "lead_custom_field_values",
+                "leads", "lead_activities", "qualification_questions", "lead_qualification_answers",
+                "lead_score_history",
+                "activities", "activity_reminders",
+                "pipelines", "pipeline_stages", "opportunities", "opportunity_stage_history", "opportunity_notes",
+                "quotations", "quotation_versions", "quotation_items", "quotation_audit_logs",
+                "orders", "order_items", "order_history",
+                "project_statuses", "projects", "project_members", "project_milestones", "project_tasks",
+                "project_task_dependencies", "project_checklist_items", "project_deliverables",
+                "project_templates", "project_template_stages",
+                "project_stage_states", "project_stage_history", "project_feedback",
+                "field_jobs", "field_job_checklist_items", "field_job_materials", "field_job_photos", "field_job_notes",
+                "payment_methods", "finance_document_sequences", "finance_idempotency_keys",
+                "invoices", "invoice_items", "payments", "payment_allocations", "refunds", "credit_notes", "debit_notes",
                 "service_verticals", "service_categories", "services");
     }
 

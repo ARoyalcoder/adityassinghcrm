@@ -89,9 +89,15 @@ export function ServicesPage() {
         column.display({
           id: 'actions',
           header: () => <span className="sr-only">Actions</span>,
-          cell: ({ row }) =>
-            canUpdate ? (
-              <div className="flex justify-end gap-2">
+          cell: ({ row }) => (
+            <div className="flex justify-end gap-2">
+              <Button asChild variant="outline" size="sm">
+                <Link to={`/admin/services/${row.original.id}/fields`} aria-label={`Lead fields of ${row.original.name}`}>
+                  Lead fields
+                </Link>
+              </Button>
+              {canUpdate ? (
+                <>
                 <Button asChild variant="outline" size="sm">
                   <Link to={`/admin/services/${row.original.id}/edit`} aria-label={`Edit ${row.original.name}`}>
                     Edit
@@ -106,8 +112,10 @@ export function ServicesPage() {
                 >
                   {row.original.active ? 'Deactivate' : 'Activate'}
                 </Button>
-              </div>
-            ) : null,
+                </>
+              ) : null}
+            </div>
+          ),
         }),
       ]),
     [canUpdate, toggleActive, toggling],

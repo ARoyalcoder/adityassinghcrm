@@ -4,44 +4,48 @@
 
 /* Design tokens (shadcn/ui convention). Components use the semantic names, never raw colours. */
 :root {
-  --radius: 0.5rem;
-  --background: oklch(0.985 0.002 75);
-  --foreground: oklch(0.2 0.006 56);
+  /* Soft and friendly: a lavender page, white cards that float on it, one purple for what matters. */
+  --radius: 0.9rem;
+  --background: oklch(0.972 0.012 300);
+  --foreground: oklch(0.24 0.03 285);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.2 0.006 56);
-  --primary: oklch(0.27 0.01 56);
-  --primary-foreground: oklch(0.985 0.002 75);
-  --secondary: oklch(0.96 0.003 75);
-  --secondary-foreground: oklch(0.27 0.01 56);
-  --muted: oklch(0.96 0.003 75);
-  --muted-foreground: oklch(0.5 0.012 58);
-  --accent: oklch(0.95 0.004 75);
-  --accent-foreground: oklch(0.27 0.01 56);
+  --card-foreground: oklch(0.24 0.03 285);
+  --primary: oklch(0.52 0.2 287);
+  --primary-foreground: oklch(0.99 0.005 300);
+  --secondary: oklch(0.95 0.02 295);
+  --secondary-foreground: oklch(0.34 0.08 287);
+  --muted: oklch(0.96 0.012 300);
+  --muted-foreground: oklch(0.5 0.03 285);
+  --accent: oklch(0.94 0.03 295);
+  --accent-foreground: oklch(0.34 0.1 287);
   --destructive: oklch(0.55 0.21 27);
-  --border: oklch(0.91 0.005 70);
-  --input: oklch(0.91 0.005 70);
-  --ring: oklch(0.55 0.012 58);
-  --sidebar: oklch(0.97 0.003 75);
+  --border: oklch(0.92 0.012 300);
+  --input: oklch(0.9 0.015 300);
+  --ring: oklch(0.6 0.15 287);
+  --sidebar: oklch(1 0 0);
+  /* Cards are lifted by a wide, faint, purple-tinted shadow rather than outlined. */
+  --soft-shadow: 0 10px 30px -12px oklch(0.45 0.15 287 / 0.18), 0 2px 6px -2px oklch(0.45 0.15 287 / 0.08);
 }
 
 .dark {
-  --background: oklch(0.17 0.005 56);
-  --foreground: oklch(0.96 0.003 75);
-  --card: oklch(0.21 0.006 56);
-  --card-foreground: oklch(0.96 0.003 75);
-  --primary: oklch(0.92 0.004 75);
-  --primary-foreground: oklch(0.21 0.006 56);
-  --secondary: oklch(0.27 0.007 56);
-  --secondary-foreground: oklch(0.96 0.003 75);
-  --muted: oklch(0.27 0.007 56);
-  --muted-foreground: oklch(0.71 0.01 60);
-  --accent: oklch(0.27 0.007 56);
-  --accent-foreground: oklch(0.96 0.003 75);
+  --background: oklch(0.19 0.025 285);
+  --foreground: oklch(0.96 0.01 300);
+  --card: oklch(0.24 0.03 285);
+  --card-foreground: oklch(0.96 0.01 300);
+  --primary: oklch(0.74 0.14 290);
+  --primary-foreground: oklch(0.2 0.04 285);
+  --secondary: oklch(0.3 0.04 285);
+  --secondary-foreground: oklch(0.96 0.01 300);
+  --muted: oklch(0.29 0.03 285);
+  --muted-foreground: oklch(0.74 0.03 290);
+  --accent: oklch(0.32 0.05 287);
+  --accent-foreground: oklch(0.96 0.01 300);
   --destructive: oklch(0.7 0.19 22);
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 16%);
-  --ring: oklch(0.55 0.012 58);
-  --sidebar: oklch(0.2 0.006 56);
+  --ring: oklch(0.7 0.14 290);
+  --sidebar: oklch(0.24 0.03 285);
+  --soft-shadow: 0 10px 30px -12px oklch(0 0 0 / 0.5);
 }
 
 @theme inline {
@@ -66,6 +70,8 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 10px);
+  --shadow-soft: var(--soft-shadow);
 }
 
 @layer base {

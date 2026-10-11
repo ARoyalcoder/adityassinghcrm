@@ -60,11 +60,20 @@ class PermissionCatalogIT extends AbstractIntegrationTest {
     void defaultGrantsFollowTheDocumentedMatrix() {
         assertThat(permissionsOf(RoleCodes.SALES_EXECUTIVE)).containsExactlyInAnyOrder(
                 Permissions.CUSTOMER_VIEW, Permissions.CUSTOMER_CREATE, Permissions.CUSTOMER_UPDATE,
-                Permissions.CATALOG_VIEW);
-        assertThat(permissionsOf(RoleCodes.TECHNICIAN)).containsExactly(Permissions.PROJECT_VIEW);
+                Permissions.LEAD_VIEW, Permissions.LEAD_CREATE, Permissions.LEAD_UPDATE,
+                Permissions.CATALOG_VIEW,
+                Permissions.ACTIVITY_VIEW, Permissions.ACTIVITY_CREATE, Permissions.ACTIVITY_UPDATE,
+                Permissions.OPPORTUNITY_VIEW, Permissions.OPPORTUNITY_CREATE, Permissions.OPPORTUNITY_UPDATE,
+                Permissions.QUOTATION_VIEW, Permissions.QUOTATION_CREATE, Permissions.QUOTATION_UPDATE,
+                Permissions.ORDER_VIEW, Permissions.ORDER_CREATE, Permissions.ORDER_UPDATE);
+        assertThat(permissionsOf(RoleCodes.TECHNICIAN)).containsExactlyInAnyOrder(
+                Permissions.PROJECT_VIEW, Permissions.FIELD_JOB_WORK,
+                Permissions.PROOF_OF_WORK_VIEW, Permissions.PROOF_OF_WORK_CREATE);
         assertThat(permissionsOf(RoleCodes.FINANCE)).containsExactlyInAnyOrder(
-                Permissions.FINANCE_VIEW, Permissions.FINANCE_APPROVE,
-                Permissions.CUSTOMER_VIEW, Permissions.PROJECT_VIEW);
+                Permissions.FINANCE_VIEW, Permissions.FINANCE_MANAGE, Permissions.FINANCE_APPROVE,
+                Permissions.FINANCE_CONFIGURE, Permissions.CUSTOMER_VIEW, Permissions.PROJECT_VIEW,
+                Permissions.QUOTATION_VIEW, Permissions.QUOTATION_CREATE, Permissions.QUOTATION_UPDATE, Permissions.QUOTATION_APPROVE,
+                Permissions.ORDER_VIEW);
         assertThat(permissionsOf(RoleCodes.ADMIN))
                 .contains(Permissions.USER_UPDATE, Permissions.CATALOG_DELETE)
                 .doesNotContain(Permissions.ROLE_UPDATE, Permissions.FINANCE_APPROVE);

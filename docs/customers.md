@@ -76,28 +76,148 @@ Details:
   `=`, `+`, `-`, `@`) are prefixed with an apostrophe, so phone numbers like `+91…` appear with a
   leading `'` in the raw file.
 
-## Profile
+## Customer 360
 
-`/customers/:id`, one tab per subject; the open tab is in the URL (`?tab=contacts`).
+`/customers/:id`. A header that is always in view, and one section per subject below it; the open
+section is in the URL (`?tab=timeline`).
 
-| Tab | Status |
+| Section | What it shows |
 | --- | --- |
-| Overview | Details and notes |
+| **Header** | Name, status, **health**, customer number, type, who manages it, phone, email, primary contact, tags |
+| Summary | Health with its reasons, summary facts (customer since, last contact, primary contact, default addresses, counts), the five latest timeline events, notes |
+| Timeline | Everything that has happened, newest first, filterable by category |
+| Business information | The record's own facts (type, company, GSTIN, source, assignment, tags) and its addresses |
 | Contacts | List, add, edit, remove, choose the primary |
-| Addresses | List, add, edit, remove, choose the default per type |
-| Activities | The customer's history, including changes to its contacts, addresses, notes and tags |
-| Leads, Opportunities, Quotations, Orders, Projects, Invoices, Payments, Tickets, AMC, Warranty, Documents | **Not built.** Each tab is present and says so. It is filled in when its module is built |
+| Activities | Calls, meetings, emails, site visits and messages: log one, see and remove those logged |
+| Sales history, Project history, Financial summary, Service history, AMC / Warranty, Documents | **Not built.** Each section is present and says so. It shows no figures, not even zeros, because "none" is not known |
+
+### Interactions
+
+An interaction is a record of something that **happened** with the customer: type `CALL`, `MEETING`,
+`EMAIL`, `SITE_VISIT`, `MESSAGE` or `OTHER`; optional direction `INBOUND` / `OUTBOUND`; when it
+happened (defaults to now; a future time is refused with `422`, since something planned is a
+follow-up, not an interaction); subject, details, outcome; and who logged it. Table
+`customer_interactions` (migration `V10`).
+
+### Timeline
+
+The timeline is **not stored**. There is no timeline table and no copy of any event. Each request
+asks every *source* for its newest events and merges them, so:
+
+- an event exists exactly as long as the record it describes (remove a call logged by mistake and it
+  is gone from the timeline);
+- nothing can be shown twice or drift out of step with the record;
+- a new module joins the timeline by declaring one bean, with no change to the customer module.
+
+Sources today:
+
+| Source | Events | Category |
+| --- | --- | --- |
+| Interactions | Call logged, Meeting completed, Email logged, Site visit completed, Message logged | `COMMUNICATION` |
+| Notes | Note added (with the note's text) | `COMMUNICATION` |
+| Audit trail | Customer created, Details updated, Status changed; Contact / Address added, updated, removed | `RECORD` |
+
+Interactions and notes are also audited, but they reach the timeline only from their own source:
+the audit source skips them, so each appears once.
+
+Categories are `COMMUNICATION`, `SALES`, `PROJECT`, `FINANCE`, `SERVICE`, `AMC`, `RECORD`. The event
+types reserved for modules that are not built yet (`LEAD_CREATED`, `QUOTATION_SENT`,
+`QUOTATION_ACCEPTED`, `ORDER_CREATED`, `PROJECT_STARTED`, `MILESTONE_COMPLETED`,
+`INVOICE_GENERATED`, `PAYMENT_RECEIVED`, `TICKET_CREATED`, `TICKET_RESOLVED`, `AMC_CREATED`,
+`AMC_RENEWED`) are named in `platform.timeline.TimelineEventTypes` and already have icons in the
+UI. **Nothing produces them yet**: they appear when their module provides a source.
+
+`GET /{id}/timeline?limit=25&category=SALES&category=FINANCE&cursor=...` returns
+`{ "events": [...], "nextCursor": "..." }`. Pass `nextCursor` back for the next (older) page; it is
+absent on the last page. `limit` is 1 to 100. Events are ordered by when they happened, then by id,
+so paging never skips or repeats an event, including events that share a timestamp.
+
+#### Adding a module's events
+
+In the new module (it may depend on `customer.api` and `platform.timeline`, never on customer
+internals):
+
+```java
+@Component
+class QuotationTimelineSource implements CustomerTimelineSource {
+
+    public Set<TimelineCategory> categories() {
+        return Set.of(TimelineCategory.SALES);
+    }
+
+    /** The newest `limit` events at or before `notAfter` (null = no bound), newest first. */
+    public List<TimelineEvent> events(UUID organizationId, UUID customerId, Instant notAfter, int limit) {
+        return quotations.sentTo(customerId, notAfter, limit).stream()
+                .map(q -> TimelineEvent.of("quotation-sent:" + q.getId(), TimelineEventTypes.QUOTATION_SENT,
+                        TimelineCategory.SALES, q.getSentAt(), "Quotation sent", q.getNumber(), q.getSentByName()))
+                .toList();
+    }
+}
+```
+
+Rules for a source: ids must be stable and unique (`<kind>:<record id>`); return events newest
+first; honour `notAfter` and `limit` in the query, not afterwards (the merge relies on a source that
+returns fewer than `limit` having nothing older). `FutureModuleProbe` in the backend tests is a
+working example, and `Customer360IT` proves that such a bean's events and health signals appear.
+
+On the frontend there is nothing to do: an unknown event type is shown with its category's icon. To
+give it its own icon, add a line to `frontend/src/components/timeline/event-types.ts`.
+
+#### Reusable timeline components
+
+`frontend/src/components/timeline/` knows nothing about customers:
+
+| Piece | Use |
+| --- | --- |
+| `Timeline` | Draws a list of events (grouped by day, or `compact` for a short "recent" list) |
+| `TimelineFeed` | A complete timeline: category filters, events, "Show older". Give it a `fetchPage` function |
+| `model.ts` | The event and page schemas, the categories, the query-string builder |
+| `event-types.ts` | Icon per event type, colour per category |
+
+A project or ticket timeline later is a new endpoint returning `TimelinePage` and one `<TimelineFeed>`.
+`platform.timeline.TimelineMerger` on the backend is equally independent of customers.
+
+### Health
+
+Health is worked out on request from current records; it is not stored and not a score.
+
+| Level | Meaning |
+| --- | --- |
+| `GOOD` | No problem signals, and at least one positive one |
+| `NEEDS_ATTENTION` | At least one warning |
+| `AT_RISK` | At least one critical signal |
+| `UNKNOWN` | No signals: too little is on record to say. Not the same as good |
+
+The level is the worst signal found, and the response lists every signal with a sentence a person
+can read, most serious first. Signals from the customer module:
+
+| Code | Impact | When |
+| --- | --- | --- |
+| `CUSTOMER_BLOCKED` | critical | Status is `BLOCKED` |
+| `CUSTOMER_INACTIVE` | warning | Status is `INACTIVE` |
+| `NOT_REACHABLE` | warning | No phone or email on the customer or any contact |
+| `CONTACT_STALE` | warning | Last interaction more than `stale-contact-days` ago (default 90) |
+| `NEVER_CONTACTED` | warning | No interaction, and a customer for more than `stale-contact-days` |
+| `CONTACT_RECENT` | positive | Last interaction within `recent-contact-days` (default 30) |
+
+The thresholds are `app.customers.health.recent-contact-days` and `stale-contact-days`
+(`CUSTOMER_HEALTH_RECENT_CONTACT_DAYS`, `CUSTOMER_HEALTH_STALE_CONTACT_DAYS`).
+
+Health today rests **only** on status, reachability and logged interactions. It knows nothing about
+money, projects or tickets, because those modules do not exist. A module adds its own signals by
+declaring a `CustomerHealthContributor` bean (for example "2 invoices overdue" as critical); the
+level then takes them into account with no change here.
 
 ### Plugging a module into the profile
 
-The tabs are a list in `frontend/src/features/customers/profile/tabs.tsx`. A module adds its tab by
-replacing its placeholder line:
+The sections are a list in `frontend/src/features/customers/profile/tabs.tsx`. A module adds its
+section by replacing its placeholder line:
 
 ```tsx
 // before
-notBuilt('leads', 'Leads', 'leads'),
+notBuilt('sales', 'Sales history', 'Leads, opportunities, quotations and orders'),
 // after
-{ key: 'leads', label: 'Leads', component: CustomerLeadsTab },
+{ key: 'sales', label: 'Sales history', component: CustomerSalesTab },
 ```
 
 Its component receives the customer (`{ customer }`) and fetches its own data, typically from an
@@ -109,9 +229,9 @@ customer module changes.
 
 | Permission | Allows | Default roles |
 | --- | --- | --- |
-| `CUSTOMER_VIEW` | List, profile, contacts, addresses, notes, activity | Super Admin, Admin, Director, Sales Manager, Sales Executive, Project Manager, Finance, Support Agent |
+| `CUSTOMER_VIEW` | List, profile, contacts, addresses, notes, interactions, timeline, health and summary | Super Admin, Admin, Director, Sales Manager, Sales Executive, Project Manager, Finance, Support Agent |
 | `CUSTOMER_CREATE` | Create a customer | Super Admin, Admin, Sales Manager, Sales Executive |
-| `CUSTOMER_UPDATE` | Edit a customer; add, edit and remove contacts, addresses and notes | Super Admin, Admin, Sales Manager, Sales Executive |
+| `CUSTOMER_UPDATE` | Edit a customer; add, edit and remove contacts, addresses and notes; log and remove interactions | Super Admin, Admin, Sales Manager, Sales Executive |
 | `CUSTOMER_DELETE` | Delete a customer | Super Admin, Admin, Sales Manager |
 | `CUSTOMER_EXPORT` | Export the list | Super Admin, Admin, Director, Sales Manager |
 
@@ -119,7 +239,8 @@ Everyone with `CUSTOMER_VIEW` sees **all** customers of their organization. "Ass
 who looks after a customer; it does not restrict who can see it. Limiting sales staff to their own
 customers is not built.
 
-A customer's own Activities tab needs only `CUSTOMER_VIEW`. The full audit log needs `AUDIT_VIEW`.
+A customer's timeline needs only `CUSTOMER_VIEW`, including the record changes on it. The full audit log
+needs `AUDIT_VIEW`.
 
 ## API
 
@@ -134,8 +255,10 @@ All under `/api/v1/customers`.
 | `POST /`, `PUT /{id}` | `CUSTOMER_CREATE` / `CUSTOMER_UPDATE` |
 | `DELETE /{id}` | `CUSTOMER_DELETE` |
 | `GET /{id}`, `GET /{id}/activity` | `CUSTOMER_VIEW` |
-| `GET /{id}/contacts`, `/addresses`, `/notes` | `CUSTOMER_VIEW` |
-| `POST`, `PUT`, `DELETE` on `/{id}/contacts`, `/addresses`; `POST`, `DELETE` on `/{id}/notes` | `CUSTOMER_UPDATE` |
+| `GET /{id}/contacts`, `/addresses`, `/notes`, `/interactions` | `CUSTOMER_VIEW` |
+| `GET /{id}/overview` (health and summary) | `CUSTOMER_VIEW` |
+| `GET /{id}/timeline` (`cursor`, `limit`, `category`) | `CUSTOMER_VIEW` |
+| `POST`, `PUT`, `DELETE` on `/{id}/contacts`, `/addresses`; `POST`, `DELETE` on `/{id}/notes`, `/{id}/interactions` | `CUSTOMER_UPDATE` |
 
 Edits send the `version` that was loaded; a stale one is `409 CONFLICT`. A customer, contact, address
 or note of another organization is `404`.
@@ -143,12 +266,20 @@ or note of another organization is `404`.
 ## For other modules
 
 - Refer to a customer by its id. Do not join to the customer tables or add a foreign key to them.
-- Auditing is automatic: `Customer`, `Contact`, `Address`, `Note` and `Tag` are `@Audited`, and the
+- Auditing is automatic: `Customer`, `Contact`, `Address`, `Note`, `Interaction` and `Tag` are `@Audited`, and the
   parts file their activity under the customer (see `ActivityOwner` in [audit.md](audit.md)).
+- To show your events on the customer timeline, provide a `CustomerTimelineSource`; to affect
+  customer health, a `CustomerHealthContributor` (both in `customer.api`; see above). Do not write
+  to any customer table to do either.
 - `UserDirectory` (identity module) is how a module validates and names an assigned employee.
 
 ## Not built
 
 Merging duplicates, fuzzy matching, bulk import, per-user visibility, custom fields, configurable
-status or source lists (they are fixed enums; changing them needs a migration), document storage
-for the Documents tab, and all the modules behind the placeholder tabs.
+status or source lists (they are fixed enums; changing them needs a migration).
+
+In the Customer 360: Sales history, Project history, Financial summary, Service history,
+AMC / Warranty and Documents are placeholders, and no timeline event or health signal about sales,
+projects, money, tickets or AMC exists until those modules are built. Editing an interaction
+(remove and log again), follow-ups and reminders, attaching an interaction to a contact, and
+opening the record behind a timeline event are also not built.

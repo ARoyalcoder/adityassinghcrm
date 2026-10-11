@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -193,6 +194,37 @@ public class AuditQueryService implements ActivityFeed {
         return activity(organizationId, entityType, entityId, pageable).map(item -> new ActivityItem(
                 item.id(), item.occurredAt(), item.action(), item.actorLabel(), item.message(),
                 item.changes() == null ? List.of() : jsonMapper.convertValue(item.changes(), CHANGE_LIST)));
+    }
+
+    @Override
+    public List<RecordedChange> changesUpTo(
+            UUID organizationId, String entityType, String entityId, Instant notAfter, int limit,
+            Set<String> excludingChangedTypes) {
+        MapSqlParameterSource params = new MapSqlParameterSource("org", organizationId)
+                .addValue("entityType", entityType).addValue("entityId", entityId).addValue("limit", limit);
+        String upTo = "";
+        if (notAfter != null) {
+            upTo = " AND a.occurred_at <= :notAfter";
+            params.addValue("notAfter", notAfter.atOffset(ZoneOffset.UTC));
+        }
+        if (excludingChangedTypes != null && !excludingChangedTypes.isEmpty()) {
+            upTo += " AND (l.entity_type IS NULL OR l.entity_type NOT IN (:excluded))";
+            params.addValue("excluded", excludingChangedTypes);
+        }
+        return jdbc.query(
+                "SELECT a.id, a.occurred_at, a.action, a.actor_label, a.message, "
+                        + "l.entity_type AS changed_type, l.entity_label AS changed_label "
+                        + "FROM entity_activity_logs a LEFT JOIN audit_logs l ON l.id = a.audit_log_id "
+                        + "WHERE a.organization_id = :org AND a.entity_type = :entityType AND a.entity_id = :entityId"
+                        + upTo + " ORDER BY a.occurred_at DESC, a.id DESC LIMIT :limit",
+                params, (rs, row) -> new RecordedChange(
+                        rs.getObject("id", UUID.class),
+                        instant(rs, "occurred_at"),
+                        AuditAction.valueOf(rs.getString("action")),
+                        rs.getString("actor_label"),
+                        rs.getString("message"),
+                        rs.getString("changed_type"),
+                        rs.getString("changed_label")));
     }
 
     private static Entry entry(ResultSet rs) throws SQLException {

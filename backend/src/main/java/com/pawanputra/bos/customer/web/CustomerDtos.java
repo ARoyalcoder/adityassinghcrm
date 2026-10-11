@@ -4,6 +4,9 @@ import com.pawanputra.bos.customer.api.AddressType;
 import com.pawanputra.bos.customer.api.CustomerSource;
 import com.pawanputra.bos.customer.api.CustomerStatus;
 import com.pawanputra.bos.customer.api.CustomerType;
+import com.pawanputra.bos.customer.api.InteractionDirection;
+import com.pawanputra.bos.customer.api.InteractionType;
+import com.pawanputra.bos.customer.internal.CustomerInteractionService;
 import com.pawanputra.bos.customer.internal.CustomerPartsService;
 import com.pawanputra.bos.customer.internal.CustomerService;
 import jakarta.validation.constraints.Email;
@@ -11,6 +14,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -109,5 +113,24 @@ final class CustomerDtos {
     }
 
     record NoteRequest(@NotBlank @Size(max = 4000) String body) {
+    }
+
+    /**
+     * Log a call, meeting, email or visit.
+     *
+     * @param occurredAt when it happened (ISO-8601); leave out for "just now". Not in the future
+     */
+    record InteractionRequest(
+            @NotNull InteractionType type,
+            InteractionDirection direction,
+            Instant occurredAt,
+            @NotBlank @Size(max = 200) String subject,
+            @Size(max = 4000) String details,
+            @Size(max = 500) String outcome) {
+
+        CustomerInteractionService.Details toDetails() {
+            return new CustomerInteractionService.Details(
+                    type, direction, occurredAt, subject.trim(), trimToNull(details), trimToNull(outcome));
+        }
     }
 }

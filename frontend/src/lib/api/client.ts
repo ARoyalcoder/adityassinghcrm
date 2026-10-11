@@ -11,6 +11,12 @@ type RequestOptions = {
    * password reset). Those must not send a stale token, and a 401 from them is final.
    */
   authenticated?: boolean
+  /**
+   * For a request that must take effect only once (recording a payment): a value made up by the
+   * caller and sent again, unchanged, with every retry. The server answers a repeat with the result
+   * of the first attempt instead of doing the work twice.
+   */
+  idempotencyKey?: string
 }
 
 const REQUEST_ID_HEADER = 'X-Request-Id'
@@ -76,8 +82,25 @@ export async function apiDownload(path: string, fallbackFileName: string): Promi
   URL.revokeObjectURL(url)
 }
 
+/**
+ * Fetches something that is not JSON (an image) with the same authentication and token renewal as
+ * apiRequest. Needed for pictures behind the API: an <img src> cannot carry the access token.
+ */
+export async function apiBlob(path: string, signal?: AbortSignal): Promise<Blob> {
+  let response = await send(path, { signal })
+  if (response.status === 401 && unauthorizedHandler && (await unauthorizedHandler())) {
+    response = await send(path, { signal })
+  }
+  if (!response.ok) {
+    // Reuses the normal error handling: this always throws an ApiError.
+    await parse(response, undefinedSchema, 'GET', path)
+  }
+  return response.blob()
+}
+
 async function send(path: string, options: RequestOptions): Promise<Response> {
-  const { method = 'GET', body, signal, authenticated = true } = options
+  const { method = 'GET', body, signal, authenticated = true, idempotencyKey } = options
+  const upload = body instanceof FormData
   try {
     return await fetch(`${env.apiBaseUrl}${path}`, {
       method,
@@ -85,11 +108,13 @@ async function send(path: string, options: RequestOptions): Promise<Response> {
       // Sends the refresh cookie to the /auth endpoints. The API is same-origin (proxied), so 'same-origin' is enough.
       credentials: 'same-origin',
       headers: {
-        Accept: 'application/json, application/problem+json, text/csv',
-        ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+        Accept: 'application/json, application/problem+json, text/csv, image/*',
+        // For a file upload the browser sets the multipart Content-Type (with its boundary) itself.
+        ...(body !== undefined && !upload ? { 'Content-Type': 'application/json' } : {}),
         ...(authenticated && accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
       },
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: upload ? body : body !== undefined ? JSON.stringify(body) : undefined,
     })
   } catch (cause) {
     if (cause instanceof DOMException && cause.name === 'AbortError') {

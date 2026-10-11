@@ -2,6 +2,7 @@ package com.pawanputra.bos.platform.web;
 
 import com.pawanputra.bos.platform.error.ApiException;
 import com.pawanputra.bos.platform.error.ErrorCode;
+import com.pawanputra.bos.platform.error.FieldValidationException;
 import com.pawanputra.bos.platform.web.ApiErrorResponse.FieldViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.util.List;
@@ -35,6 +36,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final String GENERIC_SERVER_ERROR =
             "An unexpected error occurred. Quote the requestId when contacting support.";
+
+    @ExceptionHandler(FieldValidationException.class)
+    public ResponseEntity<Object> handleFieldValidation(FieldValidationException ex, WebRequest request) {
+        List<FieldViolation> violations = ex.getViolations().stream()
+                .map(v -> new FieldViolation(v.field(), v.message()))
+                .toList();
+        return respond(ex.getErrorCode(), ex.getMessage(), violations, request);
+    }
 
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<Object> handleApiException(ApiException ex, WebRequest request) {

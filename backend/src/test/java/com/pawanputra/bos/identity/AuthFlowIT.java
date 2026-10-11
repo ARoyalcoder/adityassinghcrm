@@ -63,7 +63,12 @@ class AuthFlowIT extends AbstractIntegrationTest {
                 .body("user.status", equalTo("ACTIVE"))
                 .body("user.roles", containsInAnyOrder("SALES_EXECUTIVE"))
                 .body("user.permissions", containsInAnyOrder(
-                        "CUSTOMER_VIEW", "CUSTOMER_CREATE", "CUSTOMER_UPDATE", "CATALOG_VIEW"));
+                        "CUSTOMER_VIEW", "CUSTOMER_CREATE", "CUSTOMER_UPDATE", "CATALOG_VIEW",
+                        "LEAD_VIEW", "LEAD_CREATE", "LEAD_UPDATE",
+                        "ACTIVITY_VIEW", "ACTIVITY_CREATE", "ACTIVITY_UPDATE",
+                        "OPPORTUNITY_VIEW", "OPPORTUNITY_CREATE", "OPPORTUNITY_UPDATE",
+                        "QUOTATION_VIEW", "QUOTATION_CREATE", "QUOTATION_UPDATE",
+                        "ORDER_VIEW", "ORDER_CREATE", "ORDER_UPDATE"));
 
         String setCookie = response.getHeader("Set-Cookie");
         assertThat(setCookie)
@@ -174,7 +179,9 @@ class AuthFlowIT extends AbstractIntegrationTest {
                 .body("organizationId", equalTo(account.organizationId().toString()))
                 .body("roles", containsInAnyOrder("FINANCE", "TECHNICIAN"))
                 .body("permissions", containsInAnyOrder(
-                        "FINANCE_VIEW", "FINANCE_APPROVE", "CUSTOMER_VIEW", "PROJECT_VIEW"))
+                        "FINANCE_VIEW", "FINANCE_MANAGE", "FINANCE_APPROVE", "FINANCE_CONFIGURE", "CUSTOMER_VIEW", "PROJECT_VIEW",
+                        "FIELD_JOB_WORK", "PROOF_OF_WORK_VIEW", "PROOF_OF_WORK_CREATE",
+                        "ORDER_VIEW", "QUOTATION_VIEW", "QUOTATION_CREATE", "QUOTATION_UPDATE", "QUOTATION_APPROVE"))
                 .body("passwordHash", nullValue());
     }
 

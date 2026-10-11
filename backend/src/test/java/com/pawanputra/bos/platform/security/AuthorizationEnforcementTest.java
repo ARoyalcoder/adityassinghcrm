@@ -74,9 +74,10 @@ class AuthorizationEnforcementTest {
     @Test
     void tamperedTokenIsUnauthorized() throws Exception {
         String token = tokenFor(Set.of(), Set.of("CUSTOMER_VIEW"));
-        // Flip one character of the signature.
-        char last = token.charAt(token.length() - 1);
-        String tampered = token.substring(0, token.length() - 1) + (last == 'A' ? 'B' : 'A');
+        // Change the first character of the signature. (Not the last: its two lowest bits are padding,
+        // so some changes there decode to the very same signature and the token is rightly accepted.)
+        int at = token.lastIndexOf('.') + 1;
+        String tampered = token.substring(0, at) + (token.charAt(at) == 'A' ? 'B' : 'A') + token.substring(at + 1);
 
         mockMvc.perform(get("/api/v1/secure/customers").header(HttpHeaders.AUTHORIZATION, "Bearer " + tampered))
                 .andExpect(status().isUnauthorized());

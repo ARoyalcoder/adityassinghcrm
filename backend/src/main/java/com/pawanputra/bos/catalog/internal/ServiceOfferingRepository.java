@@ -1,5 +1,6 @@
 package com.pawanputra.bos.catalog.internal;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -20,6 +21,9 @@ public interface ServiceOfferingRepository
 
     @EntityGraph(attributePaths = {"category", "category.vertical"})
     Optional<ServiceOffering> findWithCategoryById(UUID id);
+
+    @EntityGraph(attributePaths = {"category", "category.vertical"})
+    List<ServiceOffering> findAllWithCategoryByIdIn(Collection<UUID> ids);
 
     Optional<ServiceOffering> findByCode(String code);
 

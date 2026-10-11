@@ -1,10 +1,13 @@
 import type { ComponentType } from 'react'
 import type { CustomerDetail } from '@/features/customers/api'
 import { ActivitiesTab } from '@/features/customers/profile/ActivitiesTab'
-import { AddressesTab } from '@/features/customers/profile/AddressesTab'
+import { BusinessInfoTab } from '@/features/customers/profile/BusinessInfoTab'
 import { ContactsTab } from '@/features/customers/profile/ContactsTab'
 import { NotBuiltYetTab } from '@/features/customers/profile/NotBuiltYetTab'
-import { OverviewTab } from '@/features/customers/profile/OverviewTab'
+import { SummaryTab } from '@/features/customers/profile/SummaryTab'
+import { TimelineTab } from '@/features/customers/profile/TimelineTab'
+
+import { CustomerProjectsTab } from '@/features/customers/profile/CustomerProjectsTab'
 
 export type CustomerTabProps = { customer: CustomerDetail }
 
@@ -17,32 +20,29 @@ export type CustomerTab = {
   component: ComponentType<CustomerTabProps>
 }
 
-/** A tab whose module does not exist yet. It says so plainly instead of pretending to be empty. */
-function notBuilt(key: string, label: string, plural: string): CustomerTab {
-  return { key, label, component: () => <NotBuiltYetTab label={label} plural={plural} /> }
+/** A section whose module does not exist yet. It says so plainly instead of pretending to be empty. */
+function notBuilt(key: string, label: string, contents: string): CustomerTab {
+  return { key, label, component: () => <NotBuiltYetTab title={label} contents={contents} /> }
 }
 
 /**
- * The tabs of the customer profile, in order.
+ * The sections of the Customer 360, in order. (The header, with status and health, sits above them all.)
  *
- * This is where a module plugs itself into the profile: when Leads is built, it replaces its
- * `notBuilt(...)` line with `{ key: 'leads', label: 'Leads', component: CustomerLeadsTab }`, and its
- * component receives the customer. Nothing else in the profile changes.
+ * This is where a module plugs itself into the profile: when Sales is built, it replaces its
+ * `notBuilt(...)` line with `{ key: 'sales', label: 'Sales history', component: CustomerSalesTab }`,
+ * and its component receives the customer. Nothing else in the profile changes. Its events reach
+ * the Timeline section separately, through a CustomerTimelineSource on the backend.
  */
 export const customerTabs: CustomerTab[] = [
-  { key: 'overview', label: 'Overview', component: OverviewTab },
+  { key: 'summary', label: 'Summary', component: SummaryTab },
+  { key: 'timeline', label: 'Timeline', component: TimelineTab },
+  { key: 'business', label: 'Business information', component: BusinessInfoTab },
   { key: 'contacts', label: 'Contacts', count: (customer) => customer.contactCount, component: ContactsTab },
-  { key: 'addresses', label: 'Addresses', count: (customer) => customer.addressCount, component: AddressesTab },
+  notBuilt('sales', 'Sales history', 'Leads, opportunities, quotations and orders'),
+  { key: 'projects', label: 'Project history', component: CustomerProjectsTab },
+  notBuilt('financials', 'Financial summary', 'Invoices, payments and the outstanding balance'),
+  notBuilt('service', 'Service history', 'Support tickets and service visits'),
+  notBuilt('amc', 'AMC / Warranty', 'Maintenance contracts and warranties'),
+  notBuilt('documents', 'Documents', 'Files'),
   { key: 'activities', label: 'Activities', component: ActivitiesTab },
-  notBuilt('leads', 'Leads', 'leads'),
-  notBuilt('opportunities', 'Opportunities', 'opportunities'),
-  notBuilt('quotations', 'Quotations', 'quotations'),
-  notBuilt('orders', 'Orders', 'orders'),
-  notBuilt('projects', 'Projects', 'projects'),
-  notBuilt('invoices', 'Invoices', 'invoices'),
-  notBuilt('payments', 'Payments', 'payments'),
-  notBuilt('tickets', 'Tickets', 'support tickets'),
-  notBuilt('amc', 'AMC', 'maintenance contracts'),
-  notBuilt('warranty', 'Warranty', 'warranties'),
-  notBuilt('documents', 'Documents', 'documents'),
 ]

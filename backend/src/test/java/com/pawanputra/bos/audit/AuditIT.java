@@ -299,8 +299,9 @@ class AuditIT extends AbstractIntegrationTest {
                 .metadata("nothing", null));
 
         Response log = as(admin).queryParam("module", "finance").queryParam("entityId", invoiceId.toString()).get(LOGS);
-        log.then().body("items.action", contains("PAYMENT", "APPROVAL"));
-        as(admin).get(LOGS + "/" + log.path("items[0].id")).then()
+        // Recorded within the same millisecond on a fast machine, so their order is not asserted.
+        log.then().body("items.action", containsInAnyOrder("PAYMENT", "APPROVAL"));
+        as(admin).get(LOGS + "/" + log.path("items.find { it.action == 'PAYMENT' }.id")).then()
                 .body("metadata.amount", equalTo(2500.50f))
                 .body("metadata.method", equalTo("UPI"))
                 .body("metadata.paidAt", equalTo("2026-10-01T10:15:30Z"))

@@ -270,103 +270,7 @@ test('if the server finds a duplicate the form shows the matches instead of an e
   await expect(page.getByRole('button', { name: 'Save anyway' })).toBeVisible()
 })
 
-test('customer profile has every section, and the built ones work', async ({ page }) => {
-  await mockSignedIn(page, SALES)
-  await page.route(`**/api/v1/customers/${ID}`, (route) => route.fulfill({ json: customer() }))
-  const notes = [{ id: 'n1', body: 'Prefers calls after 5 pm.', authorName: 'Asha Verma', createdAt: '2026-10-02T09:00:00Z' }]
-  await page.route(`**/api/v1/customers/${ID}/notes**`, (route) => {
-    if (route.request().method() === 'POST') {
-      const body = (route.request().postDataJSON() as { body: string }).body
-      notes.unshift({ id: 'n2', body, authorName: 'Asha Verma', createdAt: '2026-10-08T09:00:00Z' })
-      return route.fulfill({ status: 201, json: notes[0] })
-    }
-    return route.fulfill({ json: pageOf(notes) })
-  })
-  const contacts = [
-    { id: 'c1', name: 'Asha Verma', designation: 'Owner', email: 'asha@acme.example', phone: '9876543210', primaryContact: true, version: 0 },
-  ]
-  let newContact: Record<string, unknown> | undefined
-  await page.route(`**/api/v1/customers/${ID}/contacts`, (route) => {
-    if (route.request().method() === 'POST') {
-      newContact = route.request().postDataJSON() as Record<string, unknown>
-      contacts.push({ id: 'c2', name: 'Ravi Kumar', designation: null as unknown as string, email: null as unknown as string, phone: '9000000001', primaryContact: false, version: 0 })
-      return route.fulfill({ status: 201, json: contacts[1] })
-    }
-    return route.fulfill({ json: contacts })
-  })
-  await page.route(`**/api/v1/customers/${ID}/addresses`, (route) =>
-    route.fulfill({
-      json: [
-        { id: 'a1', type: 'BILLING', label: 'Head office', line1: '12 MG Road', city: 'Lucknow', state: 'Uttar Pradesh', postalCode: '226001', countryCode: 'IN', defaultAddress: true, version: 0 },
-        { id: 'a2', type: 'SERVICE', label: 'Warehouse', line1: 'Plot 4', city: 'Kanpur', state: 'Uttar Pradesh', countryCode: 'IN', defaultAddress: true, version: 0 },
-      ],
-    }),
-  )
-  await page.route(`**/api/v1/customers/${ID}/activity**`, (route) =>
-    route.fulfill({
-      json: pageOf([
-        { id: 'e2', occurredAt: '2026-10-05T10:15:30Z', action: 'CREATE', actorLabel: 'asha@example.com', message: "Created Contact 'Asha Verma'", changes: [] },
-        { id: 'e1', occurredAt: '2026-10-01T09:00:00Z', action: 'STATUS_CHANGE', actorLabel: 'asha@example.com', message: "Changed status to ACTIVE for Customer 'Acme Solar'", changes: [{ field: 'status', from: 'PROSPECT', to: 'ACTIVE' }] },
-      ]),
-    }),
-  )
-
-  await page.goto(`/customers/${ID}`)
-
-  await expect(page.getByRole('heading', { name: 'Acme Solar', level: 1 })).toBeVisible()
-  await expect(page.getByText('CUS-001001 · Business')).toBeVisible()
-  // All fifteen sections are there, in order.
-  await expect(page.getByRole('tab')).toHaveText([
-    /^Overview/, /^Contacts\s*1$/, /^Addresses\s*2$/, /^Activities/, /^Leads/, /^Opportunities/, /^Quotations/,
-    /^Orders/, /^Projects/, /^Invoices/, /^Payments/, /^Tickets/, /^AMC/, /^Warranty/, /^Documents/,
-  ])
-
-  // Overview
-  const panel = page.getByRole('tabpanel')
-  await expect(panel).toContainText('09ABCDE1234F1Z5')
-  await expect(panel).toContainText('Referral')
-  await expect(panel).toContainText('Asha Verma')
-  await expect(panel.getByRole('list', { name: 'Notes' })).toContainText('Prefers calls after 5 pm.')
-  await panel.getByLabel('New note').fill('Asked for a rooftop quote.')
-  await panel.getByRole('button', { name: 'Add note' }).click()
-  await expect(panel.getByRole('list', { name: 'Notes' }).getByRole('listitem').first()).toContainText('Asked for a rooftop quote.')
-
-  // Contacts
-  await page.getByRole('tab', { name: /^Contacts/ }).click()
-  await expect(page).toHaveURL(/tab=contacts/)
-  await expect(panel.getByRole('list', { name: 'Contacts' })).toContainText('Asha Verma')
-  await expect(panel.getByRole('list', { name: 'Contacts' })).toContainText('Primary')
-  await panel.getByRole('button', { name: 'Add contact' }).click()
-  const contactForm = panel.getByRole('form', { name: 'New contact' })
-  await contactForm.getByRole('button', { name: 'Add contact' }).click()
-  await expect(contactForm.getByText('Enter a name')).toBeVisible()
-  await contactForm.getByLabel('Name').fill('Ravi Kumar')
-  await contactForm.getByLabel('Phone').fill('9000000001')
-  await contactForm.getByRole('button', { name: 'Add contact' }).click()
-  await expect(panel.getByRole('list', { name: 'Contacts' })).toContainText('Ravi Kumar')
-  expect(newContact).toEqual({ name: 'Ravi Kumar', designation: null, phone: '9000000001', email: null, primaryContact: false })
-
-  // Addresses
-  await page.getByRole('tab', { name: /^Addresses/ }).click()
-  const addresses = panel.getByRole('list', { name: 'Addresses' })
-  await expect(addresses.getByRole('listitem').filter({ hasText: 'Billing' })).toContainText('12 MG Road')
-  await expect(addresses.getByRole('listitem').filter({ hasText: 'Service' })).toContainText('Kanpur')
-
-  // Activities
-  await page.getByRole('tab', { name: /^Activities/ }).click()
-  await expect(panel.getByRole('list', { name: 'Activity' })).toContainText("Created Contact 'Asha Verma'")
-  await expect(panel.getByRole('list', { name: 'Activity' })).toContainText('status: PROSPECT → ACTIVE')
-
-  // Sections whose module is not built say so, rather than looking empty.
-  for (const section of ['Leads', 'Quotations', 'Invoices', 'Tickets', 'AMC', 'Warranty', 'Documents']) {
-    await page.getByRole('tab', { name: new RegExp(`^${section}`) }).click()
-    await expect(panel.getByRole('heading', { name: `${section} are not available yet` })).toBeVisible()
-  }
-
-  // The open tab is in the URL, so a link or a refresh returns to it.
-  await page.goto(`/customers/${ID}?tab=addresses`)
-  await expect(page.getByRole('tab', { name: /^Addresses/ })).toHaveAttribute('aria-selected', 'true')
-})
+// The customer profile (the Customer 360) is covered in customer360.spec.ts.
 
 test('a view-only user sees customers but none of the controls that change or export them', async ({ page }) => {
   await mockSignedIn(page, ['CUSTOMER_VIEW'])
@@ -376,6 +280,15 @@ test('a view-only user sees customers but none of the controls that change or ex
   await page.route(`**/api/v1/customers/${ID}`, (route) => route.fulfill({ json: customer() }))
   await page.route(`**/api/v1/customers/${ID}/notes**`, (route) => route.fulfill({ json: pageOf([]) }))
   await page.route(`**/api/v1/customers/${ID}/contacts`, (route) => route.fulfill({ json: [] }))
+  await page.route(`**/api/v1/customers/${ID}/timeline**`, (route) => route.fulfill({ json: { events: [] } }))
+  await page.route(`**/api/v1/customers/${ID}/overview`, (route) =>
+    route.fulfill({
+      json: {
+        health: { level: 'UNKNOWN', signals: [] },
+        summary: { customerSince: '2026-10-01T09:00:00Z', contactCount: 0, addressCount: 0, interactionCount: 0, noteCount: 0 },
+      },
+    }),
+  )
 
   await page.goto('/customers')
   await expect(page.getByRole('table', { name: 'Customers' })).toContainText('Acme Solar')

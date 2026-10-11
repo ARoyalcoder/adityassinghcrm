@@ -1,5 +1,7 @@
 import { keepPreviousData, queryOptions } from '@tanstack/react-query'
 import { z } from 'zod'
+import { fieldDefinitionSchema, fileReferenceSchema } from '@/components/dynamic-fields/model'
+import type { Answers } from '@/components/dynamic-fields/values'
 import { apiRequest } from '@/lib/api/client'
 import { pageSchema, queryString } from '@/lib/api/page'
 
@@ -181,4 +183,73 @@ export function setServiceActive(id: string, active: boolean) {
 
 export function deleteService(id: string) {
   return apiRequest(`/catalog/services/${id}`, noContent, { method: 'DELETE' })
+}
+
+// ---------------------------------------------------------------------------- custom lead fields
+
+const customFieldSchema = z.object({ field: fieldDefinitionSchema, version: z.number() })
+export type CustomField = z.infer<typeof customFieldSchema>
+
+function fieldsPath(serviceId: string) {
+  return `/catalog/services/${serviceId}/custom-fields`
+}
+
+export function customFieldsKey(serviceId: string) {
+  return [...catalogKeys.services, 'detail', serviceId, 'custom-fields'] as const
+}
+
+/** Every field of the service, switched on or off, in display order. */
+export function customFieldsQuery(serviceId: string) {
+  return queryOptions({
+    queryKey: customFieldsKey(serviceId),
+    queryFn: ({ signal }) => apiRequest(fieldsPath(serviceId), z.array(customFieldSchema), { signal }),
+  })
+}
+
+/** Settings that do not apply to the field's type are null. */
+export type CustomFieldInput = {
+  label: string
+  helpText: string | null
+  required: boolean
+  options: { value: string; label: string }[] | null
+  minValue: number | null
+  maxValue: number | null
+  maxLength: number | null
+  unit: string | null
+  allowedFileTypes: string[] | null
+  maxFileSizeMb: number | null
+  displayOrder: number | null
+}
+
+export function createCustomField(serviceId: string, input: CustomFieldInput & { key: string; type: string }) {
+  return apiRequest(fieldsPath(serviceId), customFieldSchema, { method: 'POST', body: input })
+}
+
+export function updateCustomField(serviceId: string, fieldId: string, input: CustomFieldInput & { version: number }) {
+  return apiRequest(`${fieldsPath(serviceId)}/${fieldId}`, customFieldSchema, { method: 'PUT', body: input })
+}
+
+export function setCustomFieldActive(serviceId: string, fieldId: string, active: boolean) {
+  return apiRequest(`${fieldsPath(serviceId)}/${fieldId}/${active ? 'activate' : 'deactivate'}`, customFieldSchema, {
+    method: 'POST',
+  })
+}
+
+export function deleteCustomField(serviceId: string, fieldId: string) {
+  return apiRequest(`${fieldsPath(serviceId)}/${fieldId}`, noContent, { method: 'DELETE' })
+}
+
+/** Asks the server whether a set of answers is acceptable, without saving anything. */
+export function validateAnswers(serviceId: string, values: Answers) {
+  return apiRequest(`${fieldsPath(serviceId)}/validate`, z.object({ values: z.record(z.string(), z.unknown()) }), {
+    method: 'POST',
+    body: { values },
+  })
+}
+
+/** Uploads a file for a FILE field and returns the reference to use as its answer. */
+export function uploadFieldFile(serviceId: string, fieldKey: string, file: File) {
+  const body = new FormData()
+  body.append('file', file)
+  return apiRequest(`${fieldsPath(serviceId)}/${fieldKey}/files`, fileReferenceSchema, { method: 'POST', body })
 }

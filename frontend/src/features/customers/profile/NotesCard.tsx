@@ -1,78 +1,16 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ErrorState } from '@/components/feedback/ErrorState'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { formatDateTime } from '@/features/audit/api'
 import { useHasPermission } from '@/features/auth/auth-context'
-import {
-  addNote,
-  CUSTOMER_SOURCES,
-  CUSTOMER_TYPES,
-  customerKeys,
-  labelOf,
-  notesQuery,
-  removeNote,
-} from '@/features/customers/api'
-import { CustomerStatusBadge } from '@/features/customers/components/CustomerStatusBadge'
-import type { CustomerTabProps } from '@/features/customers/profile/tabs'
+import { addNote, customerKeys, notesQuery, removeNote } from '@/features/customers/api'
 
-export function OverviewTab({ customer }: CustomerTabProps) {
-  return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      <Card>
-        <CardHeader>
-          <CardTitle>Details</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
-            <dt className="text-muted-foreground">Customer no.</dt>
-            <dd className="font-mono">{customer.customerNumber}</dd>
-            <dt className="text-muted-foreground">Type</dt>
-            <dd>{labelOf(CUSTOMER_TYPES, customer.type)}</dd>
-            {customer.type === 'BUSINESS' ? (
-              <>
-                <dt className="text-muted-foreground">GSTIN</dt>
-                <dd className="font-mono">{customer.taxId ?? '—'}</dd>
-              </>
-            ) : null}
-            <dt className="text-muted-foreground">Phone</dt>
-            <dd>{customer.phone ?? '—'}</dd>
-            <dt className="text-muted-foreground">Email</dt>
-            <dd className="break-all">{customer.email ?? '—'}</dd>
-            <dt className="text-muted-foreground">Status</dt>
-            <dd>
-              <CustomerStatusBadge status={customer.status} />
-            </dd>
-            <dt className="text-muted-foreground">Source</dt>
-            <dd>{customer.source ? labelOf(CUSTOMER_SOURCES, customer.source) : '—'}</dd>
-            <dt className="text-muted-foreground">Assigned to</dt>
-            <dd>{customer.assignedTo?.name ?? 'Unassigned'}</dd>
-            <dt className="text-muted-foreground">Tags</dt>
-            <dd className="flex flex-wrap gap-1">
-              {customer.tags.length > 0
-                ? customer.tags.map((tag) => (
-                    <Badge key={tag} variant="secondary">
-                      {tag}
-                    </Badge>
-                  ))
-                : '—'}
-            </dd>
-            <dt className="text-muted-foreground">Customer since</dt>
-            <dd>{formatDateTime(customer.createdAt)}</dd>
-          </dl>
-        </CardContent>
-      </Card>
-
-      <NotesCard customerId={customer.id} />
-    </div>
-  )
-}
-
-function NotesCard({ customerId }: { customerId: string }) {
+/** Free-text notes about the customer. Adding or removing one refreshes the timeline and summary too. */
+export function NotesCard({ customerId }: { customerId: string }) {
   const queryClient = useQueryClient()
   const canEdit = useHasPermission('CUSTOMER_UPDATE')
   const notes = useQuery(notesQuery(customerId))

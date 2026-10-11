@@ -14,7 +14,10 @@ This repository currently contains the **platform foundation**: architecture, co
 the database foundation (organizations, branches, users, roles, permissions and the service catalog),
 authentication with role/permission-based authorization, the organization and configuration
 module (branches and the service catalog, with admin screens), automatic audit and activity logging,
-and customer management. Leads, quotations, projects, invoicing and the other CRM modules are not built yet.
+and customer management with a Customer 360 (health, a unified timeline, logged calls and meetings).
+Each service can be given its own lead fields (configured by administrators, rendered and validated dynamically).
+Leads exist in a minimal form with qualification: a deterministic, explainable score, priority, health and
+qualification status. Quotations, projects, invoicing and the other CRM modules are not built yet.
 
 ## Stack
 
@@ -62,6 +65,11 @@ docker-compose.yml, .env.example
 | [docs/architecture.md](docs/architecture.md) | You want to know how the system is structured and why |
 | [docs/database.md](docs/database.md) | You are adding a table, a migration or an entity |
 | [docs/configuration.md](docs/configuration.md) | You are working with branches, verticals, categories or services |
+| [docs/project-analytics.md](docs/project-analytics.md) | You want to know how a dashboard figure is worked out, or how pipeline stages are configured |
+| [docs/field-operations.md](docs/field-operations.md) | You are working with field jobs, the technician screens or customer sign-off |
+| [docs/project-templates.md](docs/project-templates.md) | You are defining how a service's projects run, or planning a project from that |
+| [docs/leads.md](docs/leads.md) | You are working with leads, their score and why, or the qualification questions |
+| [docs/custom-fields.md](docs/custom-fields.md) | You are configuring what a service asks on a lead, or building a form that asks it |
 | [docs/customers.md](docs/customers.md) | You are working with customers, or adding a module that attaches to them |
 | [docs/audit.md](docs/audit.md) | You want changes to your entity audited, or need to record an approval, payment, export or import |
 | [docs/security.md](docs/security.md) | You are protecting an endpoint, adding a permission, or deploying |

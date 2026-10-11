@@ -1,6 +1,7 @@
 import { keepPreviousData, queryOptions } from '@tanstack/react-query'
 import { z } from 'zod'
 import { apiDownload, apiRequest } from '@/lib/api/client'
+import { timelinePageSchema, timelineQueryString } from '@/components/timeline/model'
 import { pageSchema, queryString } from '@/lib/api/page'
 
 const noContent = z.undefined()
@@ -108,15 +109,6 @@ const duplicateSchema = z.object({
   matchedOn: z.array(z.string()),
 })
 export type DuplicateMatch = z.infer<typeof duplicateSchema>
-
-const activitySchema = z.object({
-  id: z.string(),
-  occurredAt: z.string(),
-  action: z.string(),
-  actorLabel: z.string(),
-  message: z.string(),
-  changes: z.array(z.object({ field: z.string(), from: z.unknown(), to: z.unknown() })).nullish(),
-})
 
 export const customerKeys = {
   all: ['customers'] as const,
@@ -261,7 +253,7 @@ export function removeAddress(customerId: string, addressId: string) {
   return apiRequest(`/customers/${customerId}/addresses/${addressId}`, noContent, { method: 'DELETE' })
 }
 
-// ---------------------------------------------------------------------------- notes and activity
+// ---------------------------------------------------------------------------- notes
 
 export function notesQuery(customerId: string) {
   return queryOptions({
@@ -279,11 +271,120 @@ export function removeNote(customerId: string, noteId: string) {
   return apiRequest(`/customers/${customerId}/notes/${noteId}`, noContent, { method: 'DELETE' })
 }
 
-export function customerActivityQuery(customerId: string) {
+// ---------------------------------------------------------------------------- interactions
+
+// Must match the backend enums customer.api.InteractionType and InteractionDirection.
+
+export const INTERACTION_TYPES = [
+  { value: 'CALL', label: 'Call' },
+  { value: 'MEETING', label: 'Meeting' },
+  { value: 'EMAIL', label: 'Email' },
+  { value: 'SITE_VISIT', label: 'Site visit' },
+  { value: 'MESSAGE', label: 'Message' },
+  { value: 'OTHER', label: 'Other' },
+] as const
+
+export const INTERACTION_DIRECTIONS = [
+  { value: 'OUTBOUND', label: 'Outgoing' },
+  { value: 'INBOUND', label: 'Incoming' },
+] as const
+
+const interactionSchema = z.object({
+  id: z.string(),
+  type: z.string(),
+  direction: z.string().nullish(),
+  occurredAt: z.string(),
+  subject: z.string(),
+  details: z.string().nullish(),
+  outcome: z.string().nullish(),
+  loggedByName: z.string(),
+  createdAt: z.string(),
+})
+export type Interaction = z.infer<typeof interactionSchema>
+
+export function interactionsQuery(customerId: string) {
   return queryOptions({
-    queryKey: [...customerKeys.detail(customerId), 'activity'],
+    queryKey: [...customerKeys.detail(customerId), 'interactions'],
     queryFn: ({ signal }) =>
-      apiRequest(`/customers/${customerId}/activity?size=50`, pageSchema(activitySchema), { signal }),
-    staleTime: 0,
+      apiRequest(`/customers/${customerId}/interactions?size=50`, pageSchema(interactionSchema), { signal }),
+  })
+}
+
+export type InteractionInput = {
+  type: string
+  direction: string | null
+  /** ISO-8601; null means "just now". */
+  occurredAt: string | null
+  subject: string
+  details: string | null
+  outcome: string | null
+}
+
+export function logInteraction(customerId: string, input: InteractionInput) {
+  return apiRequest(`/customers/${customerId}/interactions`, interactionSchema, { method: 'POST', body: input })
+}
+
+export function removeInteraction(customerId: string, interactionId: string) {
+  return apiRequest(`/customers/${customerId}/interactions/${interactionId}`, noContent, { method: 'DELETE' })
+}
+
+// ---------------------------------------------------------------------------- customer 360
+
+const healthSignalSchema = z.object({
+  code: z.string(),
+  /** POSITIVE, WARNING or CRITICAL. */
+  impact: z.string(),
+  message: z.string(),
+})
+export type HealthSignal = z.infer<typeof healthSignalSchema>
+
+const overviewSchema = z.object({
+  health: z.object({
+    /** GOOD, NEEDS_ATTENTION, AT_RISK or UNKNOWN. */
+    level: z.string(),
+    signals: z.array(healthSignalSchema),
+  }),
+  summary: z.object({
+    customerSince: z.string(),
+    lastContactAt: z.string().nullish(),
+    lastContactSubject: z.string().nullish(),
+    contactCount: z.number(),
+    addressCount: z.number(),
+    interactionCount: z.number(),
+    noteCount: z.number(),
+    primaryContact: z
+      .object({
+        name: z.string(),
+        designation: z.string().nullish(),
+        phone: z.string().nullish(),
+        email: z.string().nullish(),
+      })
+      .nullish(),
+    billingAddress: z.string().nullish(),
+    serviceAddress: z.string().nullish(),
+  }),
+})
+export type CustomerOverview = z.infer<typeof overviewSchema>
+
+/** Health and summary facts, worked out by the server from the customer's current records. */
+export function customerOverviewQuery(customerId: string) {
+  return queryOptions({
+    queryKey: [...customerKeys.detail(customerId), 'overview'],
+    queryFn: ({ signal }) => apiRequest(`/customers/${customerId}/overview`, overviewSchema, { signal }),
+  })
+}
+
+/** The key every query of this customer's timeline starts with. */
+export function customerTimelineKey(customerId: string) {
+  return [...customerKeys.detail(customerId), 'timeline'] as const
+}
+
+/** One page of the customer's timeline: everything that has happened, from every module, newest first. */
+export function fetchCustomerTimeline(
+  customerId: string,
+  request: { cursor?: string | null; categories?: string[]; limit?: number; signal?: AbortSignal },
+) {
+  return apiRequest(`/customers/${customerId}/timeline${timelineQueryString(request)}`, timelinePageSchema, {
+    signal: request.signal,
   })
 }

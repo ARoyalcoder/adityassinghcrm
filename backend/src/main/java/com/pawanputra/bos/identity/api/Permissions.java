@@ -41,13 +41,65 @@ public final class Permissions {
     public static final String CUSTOMER_DELETE = "CUSTOMER_DELETE";
     public static final String CUSTOMER_EXPORT = "CUSTOMER_EXPORT";
 
+    public static final String LEAD_VIEW = "LEAD_VIEW";
+    public static final String LEAD_CREATE = "LEAD_CREATE";
+    public static final String LEAD_UPDATE = "LEAD_UPDATE";
+    public static final String LEAD_DELETE = "LEAD_DELETE";
+    /** Defining the qualification questions and what their answers are worth. */
+    public static final String LEAD_CONFIGURE = "LEAD_CONFIGURE";
+
     public static final String PROJECT_VIEW = "PROJECT_VIEW";
+    public static final String PROJECT_CREATE = "PROJECT_CREATE";
     public static final String PROJECT_UPDATE = "PROJECT_UPDATE";
+    public static final String PROJECT_DELETE = "PROJECT_DELETE";
+    /** Defining the project templates of the services. */
+    public static final String PROJECT_CONFIGURE = "PROJECT_CONFIGURE";
+
+    /** Carrying out the field jobs assigned to you (and seeing only those). */
+    public static final String FIELD_JOB_WORK = "FIELD_JOB_WORK";
+    public static final String FIELD_JOB_VIEW = "FIELD_JOB_VIEW";
+    /** Creating, scheduling, assigning and cancelling field jobs. */
+    public static final String FIELD_JOB_MANAGE = "FIELD_JOB_MANAGE";
 
     public static final String FINANCE_VIEW = "FINANCE_VIEW";
+    /** Creating and issuing invoices, recording and allocating payments. */
+    public static final String FINANCE_MANAGE = "FINANCE_MANAGE";
+    /**
+     * Everything that takes money back off the books: credit and debit notes, refunds, cancelling an
+     * invoice, releasing an allocation, reversing a payment.
+     */
     public static final String FINANCE_APPROVE = "FINANCE_APPROVE";
+    /** Defining the payment methods. */
+    public static final String FINANCE_CONFIGURE = "FINANCE_CONFIGURE";
 
     public static final String AUDIT_VIEW = "AUDIT_VIEW";
+
+    public static final String ACTIVITY_VIEW = "ACTIVITY_VIEW";
+    public static final String ACTIVITY_CREATE = "ACTIVITY_CREATE";
+    public static final String ACTIVITY_UPDATE = "ACTIVITY_UPDATE";
+    public static final String ACTIVITY_DELETE = "ACTIVITY_DELETE";
+
+    public static final String OPPORTUNITY_VIEW = "OPPORTUNITY_VIEW";
+    public static final String OPPORTUNITY_CREATE = "OPPORTUNITY_CREATE";
+    public static final String OPPORTUNITY_UPDATE = "OPPORTUNITY_UPDATE";
+    public static final String OPPORTUNITY_DELETE = "OPPORTUNITY_DELETE";
+    public static final String OPPORTUNITY_CONFIGURE = "OPPORTUNITY_CONFIGURE";
+
+    public static final String QUOTATION_VIEW = "QUOTATION_VIEW";
+    public static final String QUOTATION_CREATE = "QUOTATION_CREATE";
+    public static final String QUOTATION_UPDATE = "QUOTATION_UPDATE";
+    public static final String QUOTATION_APPROVE = "QUOTATION_APPROVE";
+    public static final String QUOTATION_DELETE = "QUOTATION_DELETE";
+
+    public static final String ORDER_VIEW = "ORDER_VIEW";
+    public static final String ORDER_CREATE = "ORDER_CREATE";
+    public static final String ORDER_UPDATE = "ORDER_UPDATE";
+    public static final String ORDER_CANCEL = "ORDER_CANCEL";
+
+    public static final String PROOF_OF_WORK_VIEW = "PROOF_OF_WORK_VIEW";
+    public static final String PROOF_OF_WORK_CREATE = "PROOF_OF_WORK_CREATE";
+    public static final String PROOF_OF_WORK_VERIFY = "PROOF_OF_WORK_VERIFY";
+    public static final String PROOF_OF_WORK_DELETE = "PROOF_OF_WORK_DELETE";
 
     public static final Set<String> ALL = Set.of(
             USER_VIEW, USER_CREATE, USER_UPDATE, USER_DELETE,
@@ -56,9 +108,16 @@ public final class Permissions {
             BRANCH_VIEW, BRANCH_CREATE, BRANCH_UPDATE, BRANCH_DELETE,
             CATALOG_VIEW, CATALOG_CREATE, CATALOG_UPDATE, CATALOG_DELETE,
             CUSTOMER_VIEW, CUSTOMER_CREATE, CUSTOMER_UPDATE, CUSTOMER_DELETE, CUSTOMER_EXPORT,
-            PROJECT_VIEW, PROJECT_UPDATE,
-            FINANCE_VIEW, FINANCE_APPROVE,
-            AUDIT_VIEW);
+            LEAD_VIEW, LEAD_CREATE, LEAD_UPDATE, LEAD_DELETE, LEAD_CONFIGURE,
+            PROJECT_VIEW, PROJECT_CREATE, PROJECT_UPDATE, PROJECT_DELETE, PROJECT_CONFIGURE,
+            FIELD_JOB_WORK, FIELD_JOB_VIEW, FIELD_JOB_MANAGE,
+            FINANCE_VIEW, FINANCE_MANAGE, FINANCE_APPROVE, FINANCE_CONFIGURE,
+            AUDIT_VIEW,
+            ACTIVITY_VIEW, ACTIVITY_CREATE, ACTIVITY_UPDATE, ACTIVITY_DELETE,
+            OPPORTUNITY_VIEW, OPPORTUNITY_CREATE, OPPORTUNITY_UPDATE, OPPORTUNITY_DELETE, OPPORTUNITY_CONFIGURE,
+            QUOTATION_VIEW, QUOTATION_CREATE, QUOTATION_UPDATE, QUOTATION_APPROVE, QUOTATION_DELETE,
+            ORDER_VIEW, ORDER_CREATE, ORDER_UPDATE, ORDER_CANCEL,
+            PROOF_OF_WORK_VIEW, PROOF_OF_WORK_CREATE, PROOF_OF_WORK_VERIFY, PROOF_OF_WORK_DELETE);
 
     private Permissions() {
     }

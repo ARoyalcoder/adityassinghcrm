@@ -16,11 +16,11 @@ export function Sidebar() {
     .filter((section) => section.items.length > 0)
 
   return (
-    <aside className="flex shrink-0 items-center gap-4 border-b bg-sidebar px-4 py-3 md:w-60 md:flex-col md:items-stretch md:gap-6 md:border-r md:border-b-0 md:py-6">
+    <aside className="flex shrink-0 items-center gap-4 bg-sidebar px-4 py-3 shadow-soft md:sticky md:top-4 md:m-4 md:mr-0 md:h-[calc(100svh-2rem)] md:w-60 md:flex-col md:items-stretch md:gap-6 md:overflow-y-auto md:rounded-2xl md:py-6">
       <div className="flex items-center gap-2.5 md:px-2">
         <div
           aria-hidden="true"
-          className="flex size-8 items-center justify-center rounded-md bg-primary text-xs font-bold text-primary-foreground"
+          className="flex size-9 items-center justify-center rounded-xl bg-primary text-xs font-bold text-primary-foreground shadow-soft"
         >
           PP
         </div>
@@ -43,8 +43,8 @@ export function Sidebar() {
                 end={item.to === '/'}
                 className={({ isActive }) =>
                   cn(
-                    'flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground',
-                    isActive && 'bg-accent text-accent-foreground',
+                    'flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground',
+                    isActive && 'bg-primary text-primary-foreground shadow-soft hover:bg-primary hover:text-primary-foreground',
                   )
                 }
               >

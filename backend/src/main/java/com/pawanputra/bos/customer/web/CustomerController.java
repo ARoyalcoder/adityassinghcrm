@@ -4,8 +4,12 @@ import com.pawanputra.bos.audit.api.ActivityFeed.ActivityItem;
 import com.pawanputra.bos.customer.api.CustomerSource;
 import com.pawanputra.bos.customer.api.CustomerStatus;
 import com.pawanputra.bos.customer.api.CustomerType;
+import com.pawanputra.bos.customer.internal.CustomerInteractionService;
+import com.pawanputra.bos.customer.internal.CustomerOverviewService;
+import com.pawanputra.bos.customer.internal.CustomerOverviewService.Overview;
 import com.pawanputra.bos.customer.internal.CustomerPartsService;
 import com.pawanputra.bos.customer.internal.CustomerService;
+import com.pawanputra.bos.customer.internal.CustomerTimelineService;
 import com.pawanputra.bos.customer.internal.CustomerViews.Address;
 import com.pawanputra.bos.customer.internal.CustomerViews.Assignee;
 import com.pawanputra.bos.customer.internal.CustomerViews.Contact;
@@ -18,12 +22,15 @@ import com.pawanputra.bos.customer.web.CustomerDtos.AddressRequest;
 import com.pawanputra.bos.customer.web.CustomerDtos.ContactRequest;
 import com.pawanputra.bos.customer.web.CustomerDtos.CustomerRequest;
 import com.pawanputra.bos.customer.web.CustomerDtos.DuplicateCheckRequest;
+import com.pawanputra.bos.customer.web.CustomerDtos.InteractionRequest;
 import com.pawanputra.bos.customer.web.CustomerDtos.NoteRequest;
 import com.pawanputra.bos.identity.api.Permissions;
 import com.pawanputra.bos.platform.config.OpenApiConfig;
 import com.pawanputra.bos.platform.error.ApiException;
 import com.pawanputra.bos.platform.error.ErrorCode;
 import com.pawanputra.bos.platform.security.CurrentUser;
+import com.pawanputra.bos.platform.timeline.TimelineCategory;
+import com.pawanputra.bos.platform.timeline.TimelinePage;
 import com.pawanputra.bos.platform.web.ApiPaths;
 import com.pawanputra.bos.platform.web.PageResponse;
 import com.pawanputra.bos.platform.web.Paging;
@@ -35,6 +42,7 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import org.springframework.data.domain.Pageable;
@@ -83,10 +91,21 @@ public class CustomerController {
 
     private final CustomerService customers;
     private final CustomerPartsService parts;
+    private final CustomerInteractionService interactions;
+    private final CustomerTimelineService timeline;
+    private final CustomerOverviewService overview;
 
-    public CustomerController(CustomerService customers, CustomerPartsService parts) {
+    public CustomerController(
+            CustomerService customers,
+            CustomerPartsService parts,
+            CustomerInteractionService interactions,
+            CustomerTimelineService timeline,
+            CustomerOverviewService overview) {
         this.customers = customers;
         this.parts = parts;
+        this.interactions = interactions;
+        this.timeline = timeline;
+        this.overview = overview;
     }
 
     // ------------------------------------------------------------------ list, export, lookups
@@ -299,6 +318,62 @@ public class CustomerController {
     @Operation(summary = "Remove a note. Requires CUSTOMER_UPDATE.")
     public ResponseEntity<Void> removeNote(@PathVariable UUID id, @PathVariable UUID noteId) {
         parts.removeNote(organizationId(), id, noteId);
+        return ResponseEntity.noContent().build();
+    }
+
+    // ------------------------------------------------------------------ customer 360
+
+    @GetMapping("/{id}/overview")
+    @PreAuthorize(CAN_VIEW)
+    @Operation(summary = "The customer's health (with the reasons for it) and summary facts, worked out from "
+            + "current records. Requires CUSTOMER_VIEW.")
+    public Overview overview(@PathVariable UUID id) {
+        return overview.overview(organizationId(), id);
+    }
+
+    @GetMapping("/{id}/timeline")
+    @PreAuthorize(CAN_VIEW)
+    @Operation(summary = "Everything that has happened with the customer, from every module, newest first. "
+            + "Page with the returned nextCursor (cursor=...); limit up to 100; category may be repeated to "
+            + "filter (COMMUNICATION, SALES, PROJECT, FINANCE, SERVICE, AMC, RECORD). Requires CUSTOMER_VIEW.")
+    public TimelinePage timeline(
+            @PathVariable UUID id,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) Set<TimelineCategory> category) {
+        int size = limit == null ? CustomerTimelineService.DEFAULT_LIMIT : limit;
+        if (size < 1 || size > CustomerTimelineService.MAX_LIMIT) {
+            throw new ApiException(ErrorCode.MALFORMED_REQUEST,
+                    "limit must be between 1 and " + CustomerTimelineService.MAX_LIMIT);
+        }
+        return timeline.timeline(organizationId(), id, cursor, size, category == null ? Set.of() : category);
+    }
+
+    @GetMapping("/{id}/interactions")
+    @PreAuthorize(CAN_VIEW)
+    @Operation(summary = "Calls, meetings, emails and visits logged for the customer, newest first. "
+            + "Requires CUSTOMER_VIEW.")
+    public PageResponse<CustomerInteractionService.View> interactions(
+            @PathVariable UUID id,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        return PageResponse.from(interactions.list(organizationId(), id, unsorted(page, size)), Function.identity());
+    }
+
+    @PostMapping("/{id}/interactions")
+    @PreAuthorize(CAN_UPDATE)
+    @Operation(summary = "Log a call, meeting, email or visit. It appears on the customer timeline. "
+            + "Requires CUSTOMER_UPDATE.")
+    public ResponseEntity<CustomerInteractionService.View> logInteraction(
+            @PathVariable UUID id, @Valid @RequestBody InteractionRequest request) {
+        return ResponseEntity.status(201).body(interactions.log(CurrentUser.require(), id, request.toDetails()));
+    }
+
+    @DeleteMapping("/{id}/interactions/{interactionId}")
+    @PreAuthorize(CAN_UPDATE)
+    @Operation(summary = "Remove an interaction that was logged by mistake. Requires CUSTOMER_UPDATE.")
+    public ResponseEntity<Void> removeInteraction(@PathVariable UUID id, @PathVariable UUID interactionId) {
+        interactions.remove(organizationId(), id, interactionId);
         return ResponseEntity.noContent().build();
     }
 

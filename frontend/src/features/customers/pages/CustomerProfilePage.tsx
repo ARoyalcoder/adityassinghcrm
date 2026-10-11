@@ -1,16 +1,16 @@
 import { useQuery } from '@tanstack/react-query'
-import { Pencil } from 'lucide-react'
-import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { RecordLoadState } from '@/components/forms/FormParts'
 import { PageHeader } from '@/components/layout/PageHeader'
-import { Button } from '@/components/ui/button'
-import { useHasPermission } from '@/features/auth/auth-context'
 import { customerQuery, type CustomerDetail } from '@/features/customers/api'
-import { CustomerStatusBadge } from '@/features/customers/components/CustomerStatusBadge'
+import { CustomerHeader } from '@/features/customers/components/CustomerHeader'
 import { customerTabs } from '@/features/customers/profile/tabs'
 import { cn } from '@/lib/utils'
 
-/** Everything about one customer, one tab per subject. The open tab is in the URL (`?tab=contacts`). */
+/**
+ * The Customer 360: a header that is always in view, and one section per subject below it.
+ * The open section is in the URL (`?tab=timeline`), so links and refreshes return to it.
+ */
 export function CustomerProfilePage() {
   const { id = '' } = useParams()
   const customer = useQuery(customerQuery(id))
@@ -32,31 +32,13 @@ export function CustomerProfilePage() {
 }
 
 function Profile({ customer }: { customer: CustomerDetail }) {
-  const canEdit = useHasPermission('CUSTOMER_UPDATE')
   const [params, setParams] = useSearchParams()
   const active = customerTabs.find((tab) => tab.key === params.get('tab')) ?? customerTabs[0]
   const ActiveTab = active.component
 
   return (
     <div className="grid gap-6">
-      <PageHeader
-        title={customer.displayName}
-        description={`${customer.customerNumber} · ${customer.type === 'BUSINESS' ? 'Business' : 'Individual'}`}
-        back={{ to: '/customers', label: 'Customers' }}
-        action={
-          <div className="flex items-center gap-3">
-            <CustomerStatusBadge status={customer.status} />
-            {canEdit ? (
-              <Button asChild variant="outline">
-                <Link to={`/customers/${customer.id}/edit`}>
-                  <Pencil aria-hidden="true" />
-                  Edit
-                </Link>
-              </Button>
-            ) : null}
-          </div>
-        }
-      />
+      <CustomerHeader customer={customer} />
 
       <div role="tablist" aria-label="Customer sections" className="flex gap-1 overflow-x-auto border-b">
         {customerTabs.map((tab) => {

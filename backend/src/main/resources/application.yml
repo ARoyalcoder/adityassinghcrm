@@ -130,6 +130,67 @@ app:
       full-name: ${BOOTSTRAP_ADMIN_NAME:Administrator}
       organization-code: ${BOOTSTRAP_ORGANIZATION_CODE:PPG}
       organization-name: ${BOOTSTRAP_ORGANIZATION_NAME:Pawan Putra}
+  customers:
+    health:
+      # Contact within this many days counts in a customer's favour...
+      recent-contact-days: ${CUSTOMER_HEALTH_RECENT_CONTACT_DAYS:30}
+      # ...and no contact for longer than this needs attention.
+      stale-contact-days: ${CUSTOMER_HEALTH_STALE_CONTACT_DAYS:90}
+  leads:
+    scoring:
+      # Which scorer assesses leads. "rules-v1" is the built-in deterministic rules engine.
+      engine: ${LEAD_SCORING_ENGINE:rules-v1}
+      # Estimated value (INR) that counts as high / medium, and what each is worth.
+      high-value-amount: ${LEAD_SCORING_HIGH_VALUE_AMOUNT:500000}
+      high-value-points: 20
+      medium-value-amount: ${LEAD_SCORING_MEDIUM_VALUE_AMOUNT:100000}
+      medium-value-points: 10
+      # An activity within this many days counts in the lead's favour.
+      recent-activity-days: 2
+      recent-activity-points: 10
+      # This many days without activity counts against the lead and needs a follow-up...
+      inactive-after-days: ${LEAD_SCORING_INACTIVE_AFTER_DAYS:3}
+      inactive-points: -10
+      # ...and this many counts against it more, and puts it at risk.
+      cold-after-days: ${LEAD_SCORING_COLD_AFTER_DAYS:7}
+      cold-points: -20
+      # Both a phone number and an email address are known.
+      complete-contact-points: 5
+      # Score bands for priority.
+      high-priority-score: 60
+      medium-priority-score: 30
+      # When open leads are reassessed for the passing of time (Spring cron, UTC). Default: hourly.
+      rescore-cron: ${LEAD_SCORING_RESCORE_CRON:0 15 * * * *}
+  activities:
+    reminders-cron: ${ACTIVITIES_REMINDERS_CRON:0 */1 * * * *}
+  finance:
+    # The business day. Issue dates, due dates and "overdue" are decided in this time zone.
+    time-zone: ${FINANCE_TIME_ZONE:Asia/Kolkata}
+    # The month the fiscal year starts in (4 = April). Document numbers restart when it does.
+    fiscal-year-start-month: ${FINANCE_FISCAL_YEAR_START_MONTH:4}
+    currency: ${FINANCE_CURRENCY:INR}
+    # Offered on a new invoice: days from issue until it is due, and the tax rate of a new line.
+    default-payment-terms-days: ${FINANCE_DEFAULT_PAYMENT_TERMS_DAYS:15}
+    default-tax-percent: ${FINANCE_DEFAULT_TAX_PERCENT:18}
+    # Upper ends of the ageing bands, in days past the due date: 1-30, 31-60, 61-90, over 90.
+    ageing-bucket-days: [30, 60, 90]
+    # What each kind of document number starts with: INV-2627-000001.
+    numbering:
+      invoice-prefix: INV
+      payment-prefix: RCT
+      credit-note-prefix: CRN
+      debit-note-prefix: DBN
+      refund-prefix: RFD
+    # Given to an organization the first time it needs payment methods; it can change them afterwards.
+    default-payment-methods:
+      - { code: CASH, name: Cash, requires-reference: false }
+      - { code: UPI, name: UPI, requires-reference: true }
+      - { code: BANK_TRANSFER, name: Bank transfer, requires-reference: true }
+      - { code: CHEQUE, name: Cheque, requires-reference: true }
+      - { code: CARD, name: Card, requires-reference: false }
+    health:
+      # An invoice overdue for longer than this puts the customer's health at risk.
+      critical-after-days: ${FINANCE_HEALTH_CRITICAL_AFTER_DAYS:60}
   storage:
     endpoint: ${STORAGE_ENDPOINT}
     region: ${STORAGE_REGION:us-east-1}
