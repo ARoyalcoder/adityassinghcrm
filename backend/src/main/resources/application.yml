@@ -1,0 +1,200 @@
+# Base configuration shared by every profile.
+# Anything environment-specific is read from environment variables; secrets have NO defaults here.
+# Local-only defaults live in application-local.yml.
+
+spring:
+  application:
+    name: pawan-putra-business-os
+  profiles:
+    default: local
+
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:10}
+      minimum-idle: ${DB_POOL_MIN_IDLE:2}
+      connection-timeout: 10000
+      pool-name: bos-hikari
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate # Flyway owns the schema; Hibernate only verifies it.
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    validate-on-migrate: true
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 2s
+      repositories:
+        enabled: false
+    web:
+      pageable:
+        default-page-size: 20
+        max-page-size: 100
+
+  cache:
+    type: ${CACHE_TYPE:redis}
+    redis:
+      key-prefix: "bos:cache:"
+      time-to-live: 10m
+
+  servlet:
+    multipart:
+      max-file-size: 25MB
+      max-request-size: 30MB
+
+  threads:
+    virtual:
+      enabled: true
+
+  task:
+    scheduling:
+      thread-name-prefix: bos-scheduler-
+      shutdown:
+        await-termination: true
+        await-termination-period: 20s
+
+server:
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+  forward-headers-strategy: framework
+  error:
+    whitelabel:
+      enabled: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+  info:
+    build:
+      enabled: true
+
+springdoc:
+  api-docs:
+    enabled: ${API_DOCS_ENABLED:false}
+  swagger-ui:
+    enabled: ${API_DOCS_ENABLED:false}
+  paths-to-match: /api/v1/**
+
+logging:
+  level:
+    root: INFO
+    com.pawanputra.bos: ${APP_LOG_LEVEL:INFO}
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:}
+  security:
+    jwt:
+      # HMAC-SHA256 signing key, at least 32 characters. Changing it signs everyone out within the access-token TTL.
+      secret: ${JWT_SECRET}
+      issuer: ${JWT_ISSUER:pawan-putra-business-os}
+      access-token-ttl: ${JWT_ACCESS_TOKEN_TTL:15m}
+    auth:
+      # A session ends after this long without a refresh...
+      refresh-token-ttl: ${AUTH_REFRESH_TOKEN_TTL:14d}
+      # ...and in any case this long after sign-in.
+      session-max-lifetime: ${AUTH_SESSION_MAX_LIFETIME:30d}
+      password-reset-token-ttl: ${AUTH_PASSWORD_RESET_TOKEN_TTL:30m}
+      max-failed-logins: ${AUTH_MAX_FAILED_LOGINS:5}
+      lock-duration: ${AUTH_LOCK_DURATION:15m}
+      # The refresh cookie is only sent over HTTPS. Turn off only for plain-http local development.
+      cookie-secure: ${AUTH_COOKIE_SECURE:true}
+    # Creates the first SUPER_ADMIN at start-up if (and only if) the database has no users.
+    bootstrap-admin:
+      email: ${BOOTSTRAP_ADMIN_EMAIL:}
+      password: ${BOOTSTRAP_ADMIN_PASSWORD:}
+      full-name: ${BOOTSTRAP_ADMIN_NAME:Administrator}
+      organization-code: ${BOOTSTRAP_ORGANIZATION_CODE:PPG}
+      organization-name: ${BOOTSTRAP_ORGANIZATION_NAME:Pawan Putra}
+  customers:
+    health:
+      # Contact within this many days counts in a customer's favour...
+      recent-contact-days: ${CUSTOMER_HEALTH_RECENT_CONTACT_DAYS:30}
+      # ...and no contact for longer than this needs attention.
+      stale-contact-days: ${CUSTOMER_HEALTH_STALE_CONTACT_DAYS:90}
+  leads:
+    scoring:
+      # Which scorer assesses leads. "rules-v1" is the built-in deterministic rules engine.
+      engine: ${LEAD_SCORING_ENGINE:rules-v1}
+      # Estimated value (INR) that counts as high / medium, and what each is worth.
+      high-value-amount: ${LEAD_SCORING_HIGH_VALUE_AMOUNT:500000}
+      high-value-points: 20
+      medium-value-amount: ${LEAD_SCORING_MEDIUM_VALUE_AMOUNT:100000}
+      medium-value-points: 10
+      # An activity within this many days counts in the lead's favour.
+      recent-activity-days: 2
+      recent-activity-points: 10
+      # This many days without activity counts against the lead and needs a follow-up...
+      inactive-after-days: ${LEAD_SCORING_INACTIVE_AFTER_DAYS:3}
+      inactive-points: -10
+      # ...and this many counts against it more, and puts it at risk.
+      cold-after-days: ${LEAD_SCORING_COLD_AFTER_DAYS:7}
+      cold-points: -20
+      # Both a phone number and an email address are known.
+      complete-contact-points: 5
+      # Score bands for priority.
+      high-priority-score: 60
+      medium-priority-score: 30
+      # When open leads are reassessed for the passing of time (Spring cron, UTC). Default: hourly.
+      rescore-cron: ${LEAD_SCORING_RESCORE_CRON:0 15 * * * *}
+  activities:
+    reminders-cron: ${ACTIVITIES_REMINDERS_CRON:0 */1 * * * *}
+  finance:
+    # The business day. Issue dates, due dates and "overdue" are decided in this time zone.
+    time-zone: ${FINANCE_TIME_ZONE:Asia/Kolkata}
+    # The month the fiscal year starts in (4 = April). Document numbers restart when it does.
+    fiscal-year-start-month: ${FINANCE_FISCAL_YEAR_START_MONTH:4}
+    currency: ${FINANCE_CURRENCY:INR}
+    # Offered on a new invoice: days from issue until it is due, and the tax rate of a new line.
+    default-payment-terms-days: ${FINANCE_DEFAULT_PAYMENT_TERMS_DAYS:15}
+    default-tax-percent: ${FINANCE_DEFAULT_TAX_PERCENT:18}
+    # Upper ends of the ageing bands, in days past the due date: 1-30, 31-60, 61-90, over 90.
+    ageing-bucket-days: [30, 60, 90]
+    # What each kind of document number starts with: INV-2627-000001.
+    numbering:
+      invoice-prefix: INV
+      payment-prefix: RCT
+      credit-note-prefix: CRN
+      debit-note-prefix: DBN
+      refund-prefix: RFD
+    # Given to an organization the first time it needs payment methods; it can change them afterwards.
+    default-payment-methods:
+      - { code: CASH, name: Cash, requires-reference: false }
+      - { code: UPI, name: UPI, requires-reference: true }
+      - { code: BANK_TRANSFER, name: Bank transfer, requires-reference: true }
+      - { code: CHEQUE, name: Cheque, requires-reference: true }
+      - { code: CARD, name: Card, requires-reference: false }
+    health:
+      # An invoice overdue for longer than this puts the customer's health at risk.
+      critical-after-days: ${FINANCE_HEALTH_CRITICAL_AFTER_DAYS:60}
+  storage:
+    endpoint: ${STORAGE_ENDPOINT}
+    region: ${STORAGE_REGION:us-east-1}
+    bucket: ${STORAGE_BUCKET}
+    access-key: ${STORAGE_ACCESS_KEY}
+    secret-key: ${STORAGE_SECRET_KEY}
+    path-style-access: ${STORAGE_PATH_STYLE_ACCESS:true}

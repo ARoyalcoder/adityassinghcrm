@@ -1,0 +1,31 @@
+# Test profile. The datasource is supplied by Testcontainers (@ServiceConnection) in integration tests;
+# Redis and object storage are not started, so nothing here may require them at startup.
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/unused
+    username: unused
+    password: unused
+  cache:
+    type: simple
+
+management:
+  health:
+    redis:
+      enabled: false
+
+app:
+  cors:
+    allowed-origins: http://localhost:5173
+  security:
+    jwt:
+      secret: test-only-jwt-signing-key-0123456789-abcdefghij
+    auth:
+      cookie-secure: false
+  scheduling:
+    enabled: false
+  storage:
+    endpoint: http://localhost:9000
+    bucket: bos-test
+    access-key: test
+    secret-key: test-secret

@@ -1,0 +1,26 @@
+# Secrets / local environment
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Backend
+backend/target/
+*.class
+
+# Frontend
+node_modules/
+frontend/dist/
+frontend/playwright-report/
+frontend/test-results/
+*.tsbuildinfo
+
+# Logs
+*.log
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db

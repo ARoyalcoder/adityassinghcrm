@@ -1,0 +1,12 @@
+* text=auto
+
+# These run inside Linux containers / shells and break with CRLF line endings.
+mvnw text eol=lf
+*.sh text eol=lf
+*.template text eol=lf
+Dockerfile text eol=lf
+*.yml text eol=lf
+*.sql text eol=lf
+
+*.cmd text eol=crlf
+*.jar binary

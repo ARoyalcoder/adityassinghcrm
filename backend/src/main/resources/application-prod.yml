@@ -1,0 +1,11 @@
+# Production. Every secret must be supplied through the environment; startup fails if one is missing.
+
+logging:
+  structured:
+    format:
+      console: ecs # one JSON object per line, ready for a log shipper
+
+server:
+  tomcat:
+    threads:
+      max: 200

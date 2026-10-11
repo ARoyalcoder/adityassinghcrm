@@ -1,315 +1,72 @@
-import {
-  LayoutDashboard,
-  Folder,
-  CreditCard,
-  Settings,
-  QrCode,
-  ChevronRight,
-  LogOut,
-} from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { logoutUser } from "../../api/authApi";
-import { toast } from "sonner";
-import { NavLink } from "react-router-dom";
-import { motion } from "framer-motion";
+import { LogOut } from 'lucide-react'
+import { NavLink } from 'react-router-dom'
+import { Button } from '@/components/ui/button'
+import { navigation } from '@/config/navigation'
+import { useAuth } from '@/features/auth/auth-context'
+import { cn } from '@/lib/utils'
 
-const menuItems = [
-  {
-    name: "Dashboard",
-    path: "/dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    name: "Folders",
-    path: "/folders",
-    icon: Folder,
-  },
-  {
-    name: "Subscription",
-    path: "/subscription",
-    icon: CreditCard,
-  },
-  {
-    name: "Settings",
-    path: "/settings",
-    icon: Settings,
-  },
-  {
-    name: "QR Code",
-    path: "/qr",
-    icon: QrCode,
-  },
-];
+/** Side rail on desktop, top bar on small screens. Shows only what the user's permissions allow. */
+export function Sidebar() {
+  const { user, signOut } = useAuth()
+  const sections = navigation
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => !item.permission || user?.permissions.includes(item.permission)),
+    }))
+    .filter((section) => section.items.length > 0)
 
-export default function Sidebar() {
-  const navigate =
-    useNavigate();
-  const handleLogout =
-    async () => {
-      try {
-        await logoutUser();
-
-        localStorage.removeItem(
-          "token"
-        );
-
-        localStorage.removeItem(
-          "user"
-        );
-
-        localStorage.removeItem(
-          "deviceId"
-        );
-
-        toast.success(
-          "Logged out successfully"
-        );
-
-        navigate("/login");
-      } catch (error) {
-        console.error(error);
-
-        toast.error(
-          "Logout failed"
-        );
-      }
-    };
   return (
-    <aside
-      className="
-      fixed
-      left-0
-      top-0
-      z-50
-      h-screen
-      w-72
-      border-r
-      border-white/10
-      bg-[#020617]
-      backdrop-blur-xl
-      flex
-      flex-col
-    "
-    >
-      {/* Logo */}
-
-      <div className="h-20 px-6 border-b border-white/10 flex items-center">
-        <div className="flex items-center gap-4">
-          <div
-            className="
-            h-12
-            w-12
-            rounded-2xl
-            bg-linear-to-br
-            from-violet-600
-            via-blue-600
-            to-cyan-500
-            flex
-            items-center
-            justify-center
-            text-white
-            font-bold
-            text-lg
-            shadow-lg
-          "
-          >
-            D
-          </div>
-
-          <div>
-            <h1 className="font-bold text-xl text-white">
-              DocFlow
-            </h1>
-
-            <p className="text-xs text-slate-400">
-              Document Platform
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Navigation */}
-
-      <div className="flex-1 overflow-y-auto p-4">
-        <p
-          className="
-          px-3
-          mb-4
-          text-xs
-          uppercase
-          tracking-widest
-          text-slate-500
-          font-semibold
-        "
-        >
-          Navigation
-        </p>
-
-        <nav className="space-y-2">
-          {menuItems.map(
-            (item) => {
-              const Icon =
-                item.icon;
-
-              return (
-                <motion.div
-                  key={
-                    item.path
-                  }
-                  whileHover={{
-                    x: 4,
-                  }}
-                >
-                  <NavLink
-                    to={
-                      item.path
-                    }
-                    className={({
-                      isActive,
-                    }) =>
-                      `
-                    group
-                    relative
-                    flex
-                    items-center
-                    justify-between
-                    rounded-2xl
-                    px-4
-                    py-3
-                    transition-all
-
-                    ${isActive
-                        ? `
-                          bg-violet-500/10
-                          border
-                          border-violet-500/20
-                          text-white
-                        `
-                        : `
-                          text-slate-400
-                          hover:bg-white/5
-                          hover:text-white
-                        `
-                      }
-                  `
-                    }
-                  >
-                    {({
-                      isActive,
-                    }) => (
-                      <>
-                        {isActive && (
-                          <div
-                            className="
-                            absolute
-                            left-0
-                            top-2
-                            bottom-2
-                            w-1
-                            rounded-r-full
-                            bg-violet-500
-                          "
-                          />
-                        )}
-
-                        <div className="flex items-center gap-3">
-                          <Icon
-                            size={
-                              20
-                            }
-                          />
-
-                          <span className="font-medium">
-                            {
-                              item.name
-                            }
-                          </span>
-                        </div>
-
-                        <ChevronRight
-                          size={16}
-                          className={`
-                          transition-all
-                          ${isActive
-                              ? "text-violet-400"
-                              : "group-hover:translate-x-1"
-                            }
-                        `}
-                        />
-                      </>
-                    )}
-                  </NavLink>
-                </motion.div>
-              );
-            }
-          )}
-        </nav>
-
-        {/* Premium Card */}
-
-
-      </div>
-
-      {/* User */}
-
-      <div className="border-t border-white/10 p-4">
+    <aside className="flex shrink-0 items-center gap-4 bg-sidebar px-4 py-3 shadow-soft md:sticky md:top-4 md:m-4 md:mr-0 md:h-[calc(100svh-2rem)] md:w-60 md:flex-col md:items-stretch md:gap-6 md:overflow-y-auto md:rounded-2xl md:py-6">
+      <div className="flex items-center gap-2.5 md:px-2">
         <div
-          className="
-          rounded-2xl
-          bg-white/5
-          border
-          border-white/10
-          p-3
-        "
+          aria-hidden="true"
+          className="flex size-9 items-center justify-center rounded-xl bg-primary text-xs font-bold text-primary-foreground shadow-soft"
         >
-          <div className="flex items-center gap-3">
-            <img
-              src="https://ui-avatars.com/api/?background=7c3aed&color=fff&name=Admin"
-              alt="User"
-              className="h-12 w-12 rounded-full"
-            />
-
-            <div className="flex-1">
-              <h4 className="font-semibold text-white">
-                Admin User
-              </h4>
-
-              <p className="text-xs text-slate-400">
-                Premium Account
-              </p>
-            </div>
-          </div>
-
-          <button
-            onClick={
-              handleLogout
-            }
-            className="
-            mt-4
-            w-full
-            rounded-xl
-            border
-            border-red-500/20
-            bg-red-500/10
-            py-3
-            text-red-400
-            flex
-            items-center
-            justify-center
-            gap-2
-            hover:bg-red-500/20
-            transition
-          "
-          >
-            <LogOut size={18} />
-            Logout
-          </button>
+          PP
         </div>
-
-        <p className="mt-4 text-center text-xs text-slate-500">
-          Version 1.0.0
-        </p>
+        <div className="leading-tight">
+          <p className="text-sm font-semibold">Pawan Putra</p>
+          <p className="text-xs text-muted-foreground">Business OS</p>
+        </div>
       </div>
+
+      <nav aria-label="Main" className="flex min-w-0 flex-1 gap-1 overflow-x-auto md:flex-col md:gap-4 md:overflow-visible">
+        {sections.map((section) => (
+          <div key={section.title ?? 'main'} className="flex gap-1 md:flex-col">
+            {section.title ? (
+              <p className="hidden px-2.5 pb-1 text-xs font-medium text-muted-foreground md:block">{section.title}</p>
+            ) : null}
+            {section.items.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.to === '/'}
+                className={({ isActive }) =>
+                  cn(
+                    'flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground',
+                    isActive && 'bg-primary text-primary-foreground shadow-soft hover:bg-primary hover:text-primary-foreground',
+                  )
+                }
+              >
+                <item.icon className="size-4" aria-hidden="true" />
+                {item.label}
+              </NavLink>
+            ))}
+          </div>
+        ))}
+      </nav>
+
+      {user ? (
+        <div className="flex items-center gap-2 md:border-t md:px-2 md:pt-4">
+          <div className="hidden min-w-0 flex-1 leading-tight md:block">
+            <p className="truncate text-sm font-medium">{user.fullName}</p>
+            <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+          </div>
+          <Button variant="ghost" size="icon" aria-label="Sign out" title="Sign out" onClick={() => void signOut()}>
+            <LogOut aria-hidden="true" />
+          </Button>
+        </div>
+      ) : null}
     </aside>
-  );
+  )
 }
